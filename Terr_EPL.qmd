@@ -1,0 +1,437 @@
+---
+title: "Terrestrial Ecosystem Protection Level"
+author: "SANBI"
+date: January 2025
+format: 
+ html:
+  toc: true
+  toc-location: left
+  embed-resources: true
+editor: visual
+execute: 
+  eval: false
+---
+
+## Approach
+
+Cross tabulate terrestrial ecosystem map (vegetation) with land cover change and protected areas maps for 1990-2022. Cross tabulate terrestrial ecosystem type (vegetation) data with land cover 1990-2022 and Protected Areas for South Africa. This analysis is focussed on producing statistics on protected areas coverage for South Africa and includes steps to mask out ecosystem extent that extends into Eswatini and Lesotho. The results carry the text "SA" to denote this.
+
+```{r}
+#knitr::opts_chunk$set(eval = FALSE)
+# Add packages: 
+library(terra)
+library(tidyverse)
+library(PROJ) # seems to be required due to a conflict with postgres on some machines
+ 
+```
+
+## Data sources & import:
+
+1\. South African National Land Cover data sets for 1990, 2014, 2018, 2020 and 2022 (prepared by the National Department of Forestry, Fisheries and the Environment) were adjusted to have a common raster resolution (20m) and snapped to the extent of 2022 data. The data were reclassified in ARCGIS PRO into seven classes: 1 = Natural; 2 = Secondary Natural, 3 = Artificial water bodies, 4 = Built up, 5 = Croplands, 6 = Mines, 7 = Plantation.
+
+2\. National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
+
+3\. Protected Areas vector feature geodatabse prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additioal assignments such as World Heritage Site status. This data also includes numerous defacto PAs, the information for which was provided by government Conservation authorities. A full description of the steps to generate the PA data can be found here...
+
+*The terra package in R allows for direct access to ESRI file geodatabases and generation of SpatRaster and SpatVector objects used in this analysis.*
+
+```{r}
+#Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
+lc1990 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc1990_7class.tif") 
+lc2014 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2014_7class.tif")
+lc2018 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2018_7class.tif")
+lc2020 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2020_7class.tif")
+lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+
+#aggregate to test - drop this step when all is working - full processing takes 16hours--------------------------------------------------- 
+
+# agg_fact <- 20
+#  mode_function <- function(x) {
+#      ux <- unique(x)
+#      ux[which.max(tabulate(match(x, ux)))]
+#  }
+# lc1990 <- aggregate(lc1990, fact = agg_fact, fun = mode_function)
+# lc2014 <- resample(lc2014, lc1990, method = "near")
+# lc2018 <- resample(lc2018, lc1990, method = "near")
+# lc2020 <- resample(lc2020, lc1990, method = "near")
+# lc2022 <- resample(lc2022, lc1990, method = "near")
+# #--------------------------------------------------------
+# 
+# #reclassify to nat 1 vs not natural 2 (no data 0) 
+# lc1990 <- ifel(lc1990 < 2, lc1990, 2) 
+# lc2014 <- ifel(lc2014 < 2, lc2014, 2)
+# lc2018 <- ifel(lc2018 < 2, lc2018, 2)
+# lc2020 <- ifel(lc2020 < 2, lc2020, 2)
+# lc2022 <- ifel(lc2022 < 2, lc2022, 2)
+
+# add vegetation data
+veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+# to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
+veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
+
+vegrast <- rasterize(veg,lc1990,"T_MAPCODE")
+
+#add PA data
+pa <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "SANBI_PA_2024Q2_AEA") #ensure it uses proj =  wgs84 aea cm 25 -24 -33 
+```
+
+### Mask out Lesotho and Eswatini
+
+To ensure the statistics on land cover change are applicable to South Africa the countries of Lesotho and Eswatini (which are covered by the input LC and VEG data above) need to be masked out. For RLE processes these are left in the workflow as the statistics need to be applicable to whole vegetation types. Land cover rasters also need to be resampled to match extent of masked vegraster, not ideal to resample but simplest approach.
+
+```{r}
+# import a polygon  of  Eswatini and Lesotho then make a raster mask from this and apply to vegmap so the stats generated are National Statistics
+
+esw_les <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_change.gdb", "mask_esw_les") #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+
+mask_esw_les <- rasterize(esw_les, vegrast, "CODE")
+mask_esw_les <- (mask_esw_les =="LeS") # had to do this as just using mask raster doe snot work for some reason
+
+vegrast_masked <- mask(vegrast, mask_esw_les, maskvalue=TRUE) # check if this changes the extent? if so use below to correct
+
+```
+
+## Data preparation:
+
+Subset PA data for each time point using DECL_YEAR, excluding properties degazetted using UNDECL_YEA. In preparation for this selection Decl_year is set to 0 when unknown, and Undecl_year is set to 9999 for those PAs not ever degazetted.
+
+Rasterize PA layers at each time point, using PA SUBTYPE attribute, and snapping to the land cover grid.
+
+```{r}
+#knitr::opts_chunk$set(eval = FALSE)
+#Data preparation
+
+# Create PA vectors for each time point
+pa1990 <- subset(pa, pa$DECL_YEAR <  1991 & pa$UNDECL_YEA >1990)  
+pa2000 <- subset(pa, pa$DECL_YEAR <  2001 & pa$UNDECL_YEA >2000)
+pa2010 <- subset(pa, pa$DECL_YEAR <  2011 & pa$UNDECL_YEA >2010)
+pa2015 <- subset(pa, pa$DECL_YEAR <  2016 & pa$UNDECL_YEA >2015)
+pa2018 <- subset(pa, pa$DECL_YEAR <  2019 & pa$UNDECL_YEA >2018)
+pa2020 <- subset(pa, pa$DECL_YEAR <  2021 & pa$UNDECL_YEA >2020)
+pa2022 <- subset(pa, pa$DECL_YEAR <  2023 & pa$UNDECL_YEA >2022)
+pa2023 <- subset(pa, pa$DECL_YEAR <  2024 & pa$UNDECL_YEA >2023)
+# Create PA rasters
+pr1990 <- rasterize(pa1990,lc1990,"SUBTYPE") 
+pr2000 <- rasterize(pa2000,lc1990,"SUBTYPE") 
+pr2010 <- rasterize(pa2010,lc1990,"SUBTYPE") 
+pr2015 <- rasterize(pa2015,lc1990,"SUBTYPE")
+pr2018 <- rasterize(pa2018,lc1990,"SUBTYPE") 
+pr2020 <- rasterize(pa2020,lc1990,"SUBTYPE") 
+pr2022 <- rasterize(pa2022,lc1990,"SUBTYPE") 
+pr2023 <- rasterize(pa2023,lc1990,"SUBTYPE") 
+
+ 
+  
+```
+
+## Analysis:
+
+*Cross-tabulate land cover time series with vegetation and protected areas.*
+
+Stack the land cover for each time period with the corresponding PA data and the vegetation data.
+
+Cross-tabulate the raster stack and add a column denoting the YEAR to the output table (in tibble format). It is crucial to use the NA values in the cross tabulation as this will help with tracking LC outside of the PA network - this is because the PA vector and hence the raster is not continuous (not a wall to wall map) and there is no data between PA features.
+
+```{r}
+#knitr::opts_chunk$set(eval = FALSE)
+# Step 3. Crosstabulate vegetation, land cover and PA. Align the land cover time point with the PA time point as far as possible 
+ 
+tb1990 <- as_tibble(crosstab(c(lc1990,vegrast_masked,pr1990), useNA=TRUE))
+tb1990 <- tb1990 %>% add_column(YEAR =1990) %>% rename(LC = nlc1990_7class) 
+tb2000 <- as_tibble(crosstab(c(lc1990,vegrast_masked,pr2000),useNA=TRUE))
+tb2000 <- tb2000 %>% add_column(YEAR =2000) %>% rename(LC = nlc1990_7class) 
+tb2010 <- as_tibble(crosstab(c(lc2014,vegrast_masked,pr2010),useNA=TRUE))
+tb2010 <- tb2010 %>% add_column(YEAR =2010) %>% rename(LC = nlc2014_7class) 
+tb2015 <- as_tibble(crosstab(c(lc2014,vegrast_masked,pr2015),useNA=TRUE))
+tb2015 <- tb2015 %>% add_column(YEAR =2015) %>% rename(LC = nlc2014_7class) 
+tb2018 <- as_tibble(crosstab(c(lc2018,vegrast_masked,pr2018),useNA=TRUE))
+tb2018 <- tb2018 %>% add_column(YEAR =2018)  %>% rename(LC = nlc2018_7class) 
+tb2020 <- as_tibble(crosstab(c(lc2020,vegrast_masked,pr2020),useNA=TRUE))
+tb2020 <- tb2020 %>% add_column(YEAR =2020) %>% rename(LC = nlc2020_7class) 
+tb2022 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2022),useNA=TRUE))
+tb2022 <- tb2022 %>% add_column(YEAR =2022) %>% rename(LC = nlc2022_7class) 
+tb2023 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2023),useNA=TRUE))
+tb2023 <- tb2023 %>% add_column(YEAR =2023) %>% rename(LC = nlc2022_7class) 
+```
+
+Step 5. Combine the output tables and convert pixel counts to extent in Km2 . Pixels in the rasters are 20m x 20m, so conversion requires multiplication by cell area (400m2) and division by 1000 000 to result in km2. Filter out marine space lying beyond the vegetation map and land cover maps. Recode the NA pixels in the PA SUBTYPE column to "NOTPA"; this allows for statistics on land cover change inside and outside of PAs. Filter out T_MAPCODE = Null as these are a small number of pixels on borders, but be careful to retain T_MAPCODE NA as these are FW and EST areas inside of PAS, rename as "NOTVEG".
+
+```{r}
+#knitr::opts_chunk$set(eval = FALSE)
+# Step 5. 
+
+rlist = list(tb1990,tb2000, tb2010, tb2015, tb2018, tb2020, tb2022, tb2023) 
+sa_pa_rall <- rlist %>%  bind_rows()%>%   
+  as_tibble() %>% 
+  filter(n != 0, !is.na(LC), LC != "NaN", LC != 0,!is.na(T_MAPCODE)) %>% # T_MAPCODE NAs are outside of SA,  LC NA is outside of SA territory, LC = 0 is marine, n = 0 is combos not ecounteredd. NB -  KEEP the TRUE  NAs for T_MAPCODE which are EST and FW see earlier step to adjust veg input layer to ensure these can be seperated from T_MAPCODE NAs from masking process.
+  mutate(SUBTYPE = if_else(SUBTYPE == "" | is.na(SUBTYPE), "NOTPA", SUBTYPE)) %>% # Non PA pixels we want to keep for the stats
+         mutate(km2 = (n*400)/1000000, #change to 400 without aggregation
+         LC_text = ifelse(LC==1, "Nat", "Notnat"),
+         BIOME = str_replace_all(T_MAPCODE, 
+                                  c("AT.*" = "Albany Thicket", 
+                                    "AZ.*" = "Azonal", 
+                                    "CB.*" = "IOCB", 
+                                    "D.*"  = "Desert", 
+                                    "FF.*" = "Fynbos", 
+                                    "FR.*" = "Fynbos",
+                                    "FS.*" = "Fynbos",
+                                    "FO.*" = "Forest", 
+                                    "G.*"  = "Grassland",  
+                                    "NK.*" = "Nama-Karoo", 
+                                    "SK.*" = "Succulent Karoo",
+                                    "SV.*" = "Savanna",
+                                    "NOTVEG.*" = "NOTVEG")),
+         TYPE = str_replace_all(SUBTYPE, 
+                                c("FNR.*" = "FNR", 
+                                  "FWA.*" = "FWA", 
+                                  "MCA.*" = "MCA", 
+                                  "NP.*" = "NP", 
+                                  "MPA.*" = "MPA",
+                                  "NR.*" = "NR", 
+                                  "PE.*" = "PE", 
+                                  "SNR.*" = "SNR", 
+                                  "WHS.*" = "WHS",
+                                  "NOTPA.*" = "NOTPA")))%>%
+
+  relocate(LC, .after = T_MAPCODE)%>%
+  relocate(LC_text, .after = LC)%>%
+  relocate(BIOME, .after = T_MAPCODE) %>%
+  relocate(km2, .after = n)%>%
+  relocate(TYPE, .after = SUBTYPE)%>%
+  relocate(YEAR, .after = TYPE)
+
+# make a datatable from the vegsa, then extract CONSTARGETS for EPL computation
+tb_veg <- as_tibble(veg)
+tb_veg <- tb_veg %>% 
+  select(c(T_MAPCODE, T_CNSRV_TRGT)) %>%
+  distinct(T_MAPCODE, T_CNSRV_TRGT) %>%
+  filter(T_MAPCODE != "NOTVEG")
+
+sa_pa_rall <- sa_pa_rall %>%
+  inner_join(tb_veg, by = "T_MAPCODE")
+ 
+# # write output to csv for excel use
+write.csv(sa_pa_rall, file = "sa_pa_rall.csv") # a test vesion has been output sa_pa_rall_test based on aggregation to 400m pixels
+```
+
+## Results:
+
+Summarize the results for further analysis and as a basis for graphics (long data format).
+
+1\) Overall summary of PA estate over time per biome
+
+```{r}
+#import spatial analysis output
+#sa_pa_rall <- read_csv("sa_pa_rall.csv", show_col_types = FALSE) # iport test data for now but once the spatial aspects is run then use full version 
+
+biome_order <- c("Albany Thicket", "Azonal", "Desert", "Forest", "Fynbos", "Grassland", "IOCB", "Nama-Karoo", "Savanna", "Succulent Karoo", "NOTVEG")
+sa_pa_rall$BIOME <- factor(sa_pa_rall$BIOME, levels = biome_order) # this helps set the order
+
+#Summary of overall PA estate over time per biome
+km2_sum_biome <- sa_pa_rall %>%   
+  filter( TYPE!= "NOTPA" ,!is.na(T_MAPCODE)) %>%
+  group_by(YEAR,BIOME) %>%
+  summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
+  pivot_wider(names_from = YEAR, values_from = tot_km2, values_fill = 0) %>%
+   bind_rows(
+      summarise(.,across(`1990`:`2023`, sum, na.rm = TRUE)) %>%
+            mutate(BIOME = "TOTAL"))  # Adjust this column if needed
+
+#Summary of overall PA estate over time per biome
+prop_sum_sa <- sa_pa_rall %>%   
+  filter(!is.na(T_MAPCODE)) %>%
+  group_by(YEAR,BIOME) %>%
+  summarise(total_km2 = sum(km2),.groups = 'drop') %>%
+  group_by(YEAR) %>%
+  mutate(proportion = total_km2 / sum(total_km2)) %>%
+  select(-total_km2)%>%
+  pivot_wider(names_from = YEAR, values_from = proportion, values_fill = 0)
+```
+
+2.  Calculate Ecosystem Protection Levels and % protection per ecosystem type. Import Targets from veg data, add this to table and calculate targets as km2 per ecosystem type. Also calculate the GBF 30% target per ecosystem type. Then calculate the percentage PA coverage per type.
+
+```{r}
+# EPL computations
+targets <- sa_pa_rall %>%
+  filter(YEAR == 2023) %>% 
+  group_by(T_MAPCODE, BIOME, T_CNSRV_TRGT) %>%
+  summarise(type_tot_km2 = sum(km2),.groups = 'drop') %>%
+  mutate(gbf_tar_km2 = 0.3 * type_tot_km2, nat_tar_km2 = T_CNSRV_TRGT/100 * type_tot_km2) 
+  
+km2_sum_veg <- sa_pa_rall %>%   
+  filter( TYPE!= "NOTPA") %>%
+  group_by(T_MAPCODE, YEAR) %>%
+  summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
+  pivot_wider(names_from = YEAR, values_from = tot_km2) 
+   
+epl <- targets %>% 
+  left_join(km2_sum_veg, by = "T_MAPCODE") %>%
+  mutate(prop_pa_2018 = `2018`/type_tot_km2) %>% #use backquotes to id the columns 
+  mutate(prop_pa_2023 = `2023`/type_tot_km2) %>%
+  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) %>%
+  mutate(epl_2023 = ifelse(`2023` >= nat_tar_km2, "WP", ifelse(`2023` >= nat_tar_km2/2, "MP", ifelse(`2023` >= nat_tar_km2/20, "PP", "NP")))) %>% 
+  mutate(epl_2018 = ifelse(`2018` >= nat_tar_km2, "WP", ifelse(`2018` >= nat_tar_km2/2, "MP", ifelse(`2018` >= nat_tar_km2/20, "PP", "NP"))))
+  
+write.csv(epl, file = "results_df_EPL.csv") #test outputs to be changed to full output without "_test"
+
+```
+
+```{r}
+## 1) plot the overal PA TYPE over time  
+
+plot_data <- sa_pa_rall %>%
+  filter(!is.na(TYPE),TYPE != "NOTPA" & TYPE != "MPA") %>%
+  group_by(TYPE, YEAR) %>%
+  summarise(total_km2 = sum(km2), .groups = 'drop')
+ 
+
+# Set colors and order
+pa_colors <- c(
+  "NP" = "darkgreen",
+  "NR" = "green4",
+  "FWA" = "green3",
+  "FNR" = "green2", 
+  "PE" = "yellow4",
+  "MCA" = "yellow3",
+  "WHS" = "yellow2",
+  "SNR" = "cyan4"
+)
+
+pa_order <- c("NP", "NR", "FWA", "FNR", "PE", "MCA", "WHS", "SNR")
+plot_data$TYPE <- factor(plot_data$TYPE, levels = pa_order)
+
+# Create the plot
+plot <- ggplot(plot_data, aes(x = as.factor(YEAR), y = total_km2, fill = TYPE)) +
+  geom_bar(stat = "identity") +  # Stacked bar chart 
+  scale_fill_manual(values = pa_colors) + 
+  theme_minimal() +
+  labs(
+        x = "Year",
+    y = "Km2",
+    fill = "Protected Area Type"
+  ) +
+  #scale_y_continuous(labels = km2) +  # Show y-axis as percentages
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 8),
+        legend.position = "right",
+        legend.text = element_text(size = 8))
+
+#export the graph
+ggsave(
+  filename = "pa_km2_year_plot.jpeg", # File name
+  plot = plot,                            # Plot object
+  device = "jpeg",                        # File format
+  width = 12, height = 8, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+```
+
+```{r}
+## 2) plot the PA by BIOME over time  
+options(scipen = 999)
+plot_data2 <- sa_pa_rall %>%   
+  filter(TYPE != "NOTPA" & TYPE != "MPA",!is.na(T_MAPCODE)) %>%
+  group_by(YEAR,BIOME) %>%
+  summarise(total_km2 = sum(km2),.groups = 'drop') %>%
+  group_by(YEAR) %>%
+  mutate(proportion = total_km2 / sum(total_km2))
+
+biome_colors <- c(
+  "Albany Thicket" = "darkgreen",
+  "Azonal" = "blue",
+  "Desert" =  "darkgrey",
+  "Forest" =  "darkblue",
+  "Fynbos"  =  "purple",
+  "Grassland"  = "green3",
+  "IOCB"  = "orange",
+  "Nama-Karoo" = "brown1",
+  "Savanna"  =  "brown",
+  "Succulent Karoo"  = "yellow3",
+  "Total" = "black"
+)
+ 
+
+plot2 <- ggplot(plot_data2, aes(x = as.factor(YEAR), y = total_km2, fill = BIOME)) +
+  geom_bar(stat = "identity") +  # Stacked bar chart 
+  scale_fill_manual(values = biome_colors) + 
+  theme_minimal() +
+  labs(
+        x = "Year",
+    y = "Km2",
+    fill = "Biome"
+  ) +
+  #scale_y_continuous(labels = km2) +  # Show y-axis as percentages
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 8),
+        legend.position = "right",
+        legend.text = element_text(size = 8))
+
+#export the graph
+ggsave(
+  filename = "pa_km2_biome_plot.jpeg", # File name
+  plot = plot2,                            # Plot object
+  device = "jpeg",                        # File format
+  width = 12, height = 8, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+```
+
+```{r}
+## 3) plot the PA by BIOME over time  
+#PROPORTIONAL version 
+
+# Calculate proportions
+prop_data3 <- sa_pa_rall %>%
+  filter(TYPE != "NOTPA" & TYPE != "MPA" & 
+           YEAR != 2025, YEAR != 2015, YEAR != 2010 & 
+           YEAR != 2022) %>%
+  group_by(TYPE, BIOME, YEAR) %>%
+  summarise(total_km2 = sum(km2), .groups = 'drop') %>%
+  group_by(BIOME, YEAR) %>%
+  mutate(proportion = total_km2 / sum(total_km2)) %>%
+  ungroup()
+
+# Set colors and order
+pa_colors <- c(
+  "NP" = "darkgreen",
+  "NR" = "green4",
+  "FWA" = "green3",
+  "FNR" = "green2", 
+  "PE" = "yellow4",
+  "MCA" = "yellow3",
+  "WHS" = "yellow2",
+  "SNR" = "cyan4"
+)
+
+
+pa_order <- c("NP", "NR", "FWA", "FNR", "PE", "MCA", "WHS", "SNR")
+prop_data3$TYPE <- factor(prop_data3$TYPE, levels = pa_order)
+
+# Create the plot
+plot <- ggplot(prop_data3, aes(x = as.factor(YEAR), y = proportion, fill = TYPE)) +
+  geom_bar(stat = "identity", position = "stack") +  # Stacked bar chart for proportions
+  scale_fill_manual(values = pa_colors) + 
+  facet_wrap(~ BIOME, ncol = 5) +
+  theme_minimal() +
+  labs(
+    title = "Proportion of Protected Area Types by Biome and Year",
+    x = "Year",
+    y = "Proportion",
+    fill = "Protected Area Class"
+  ) +
+  scale_y_continuous(labels = scales::percent) +  # Show y-axis as percentages
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 10),
+        legend.position = "bottom",
+        legend.text = element_text(size = 7))
+
+#export the graph
+ggsave(
+  filename = "pa_prop_biome_year_plot.jpeg", # File name
+  plot = plot,                            # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+```
