@@ -212,7 +212,7 @@ sa_pa_rall <- sa_pa_rall %>%
   inner_join(tb_veg, by = "T_MAPCODE")
  
 # # write output to csv for excel use
-write.csv(sa_pa_rall, file = "sa_pa_rall.csv") # a test vesion has been output sa_pa_rall_test based on aggregation to 400m pixels
+write.csv(sa_pa_rall, file = "outputs/sa_pa_rall.csv") # a test vesion has been output sa_pa_rall_test based on aggregation to 400m pixels
 ```
 
 ## Results:
@@ -223,7 +223,7 @@ Summarize the results for further analysis and as a basis for graphics (long dat
 
 ```{r}
 #import spatial analysis output
-#sa_pa_rall <- read_csv("sa_pa_rall.csv", show_col_types = FALSE) # iport test data for now but once the spatial aspects is run then use full version 
+#sa_pa_rall <- read_csv("outputs/sa_pa_rall.csv", show_col_types = FALSE) # iport test data for now but once the spatial aspects is run then use full version 
 
 biome_order <- c("Albany Thicket", "Azonal", "Desert", "Forest", "Fynbos", "Grassland", "IOCB", "Nama-Karoo", "Savanna", "Succulent Karoo", "NOTVEG")
 sa_pa_rall$BIOME <- factor(sa_pa_rall$BIOME, levels = biome_order) # this helps set the order
@@ -273,7 +273,7 @@ epl <- targets %>%
   mutate(epl_2023 = ifelse(`2023` >= nat_tar_km2, "WP", ifelse(`2023` >= nat_tar_km2/2, "MP", ifelse(`2023` >= nat_tar_km2/20, "PP", "NP")))) %>% 
   mutate(epl_2018 = ifelse(`2018` >= nat_tar_km2, "WP", ifelse(`2018` >= nat_tar_km2/2, "MP", ifelse(`2018` >= nat_tar_km2/20, "PP", "NP"))))
   
-write.csv(epl, file = "results_df_EPL.csv") #test outputs to be changed to full output without "_test"
+write.csv(epl, file = "outputs/results_df_EPL.csv") #test outputs to be changed to full output without "_test"
 
 ```
 
@@ -319,7 +319,7 @@ plot <- ggplot(plot_data, aes(x = as.factor(YEAR), y = total_km2, fill = TYPE)) 
 
 #export the graph
 ggsave(
-  filename = "pa_km2_year_plot.jpeg", # File name
+  filename = "outputs/pa_km2_year_plot.jpeg", # File name
   plot = plot,                            # Plot object
   device = "jpeg",                        # File format
   width = 12, height = 8, units = "cm",   # Dimensions
@@ -369,7 +369,7 @@ plot2 <- ggplot(plot_data2, aes(x = as.factor(YEAR), y = total_km2, fill = BIOME
 
 #export the graph
 ggsave(
-  filename = "pa_km2_biome_plot.jpeg", # File name
+  filename = "outputs/pa_km2_biome_plot.jpeg", # File name
   plot = plot2,                            # Plot object
   device = "jpeg",                        # File format
   width = 12, height = 8, units = "cm",   # Dimensions
@@ -428,7 +428,7 @@ plot <- ggplot(prop_data3, aes(x = as.factor(YEAR), y = proportion, fill = TYPE)
 
 #export the graph
 ggsave(
-  filename = "pa_prop_biome_year_plot.jpeg", # File name
+  filename = "outputs/pa_prop_biome_year_plot.jpeg", # File name
   plot = plot,                            # Plot object
   device = "jpeg",                        # File format
   width = 16, height = 12, units = "cm",   # Dimensions
