@@ -235,8 +235,8 @@ km2_sum_biome <- sa_pa_rall %>%
   summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
   pivot_wider(names_from = YEAR, values_from = tot_km2, values_fill = 0) %>%
    bind_rows(
-      summarise(.,across(`1990`:`2023`, sum, na.rm = TRUE)) %>%
-            mutate(BIOME = "TOTAL"))  # Adjust this column if needed
+      summarise(.,across(`1990`:`2023`, \(x) sum(x , na.rm = TRUE)) %>%
+            mutate(BIOME = "TOTAL")) ) # Adjust this column if needed
 
 #Summary of overall PA estate over time per biome
 prop_sum_sa <- sa_pa_rall %>%   
@@ -247,6 +247,21 @@ prop_sum_sa <- sa_pa_rall %>%
   mutate(proportion = total_km2 / sum(total_km2)) %>%
   select(-total_km2)%>%
   pivot_wider(names_from = YEAR, values_from = proportion, values_fill = 0)
+
+# Summary of natural vs not natural PA estate (LC=1 is natural) 
+nat_pa_estate <- sa_pa_rall %>%
+  filter(YEAR ==2023, !is.na(T_MAPCODE)) %>%
+             group_by(LC_text, BIOME) %>%
+  summarise(total_km2 = sum(km2),.groups = 'drop') %>%
+  pivot_wider(names_from = LC_text, values_from = total_km2, values_fill = 0) %>%
+   bind_rows(
+      summarise(.,across(Nat:Notnat, \(x) sum(x , na.rm = TRUE)) %>%
+            mutate(BIOME = "TOTAL")) ) %>%
+  mutate(TOTAL = Nat + Notnat, prop_nat = Nat/TOTAL)
+write.csv(nat_pa_estate, file = "outputs/results_df_natural_pa_estate_biome.csv") #export results
+
+
+
 ```
 
 2.  Calculate Ecosystem Protection Levels and % protection per ecosystem type. Import Targets from veg data, add this to table and calculate targets as km2 per ecosystem type. Also calculate the GBF 30% target per ecosystem type. Then calculate the percentage PA coverage per type.
@@ -260,7 +275,7 @@ targets <- sa_pa_rall %>%
   mutate(gbf_tar_km2 = 0.3 * type_tot_km2, nat_tar_km2 = T_CNSRV_TRGT/100 * type_tot_km2) 
   
 km2_sum_veg <- sa_pa_rall %>%   
-  filter( TYPE!= "NOTPA") %>%
+  filter(LC ==1,  TYPE!= "NOTPA") %>% # Make sure that only natural areas count 
   group_by(T_MAPCODE, YEAR) %>%
   summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
   pivot_wider(names_from = YEAR, values_from = tot_km2) 
@@ -273,7 +288,18 @@ epl <- targets %>%
   mutate(epl_2023 = ifelse(`2023` >= nat_tar_km2, "WP", ifelse(`2023` >= nat_tar_km2/2, "MP", ifelse(`2023` >= nat_tar_km2/20, "PP", "NP")))) %>% 
   mutate(epl_2018 = ifelse(`2018` >= nat_tar_km2, "WP", ifelse(`2018` >= nat_tar_km2/2, "MP", ifelse(`2018` >= nat_tar_km2/20, "PP", "NP"))))
   
-write.csv(epl, file = "outputs/results_df_EPL.csv") #test outputs to be changed to full output without "_test"
+write.csv(epl, file = "outputs/results_df_EPL.csv") #export results 
+
+#summarise EPL per biome
+epl_sum_biome <- epl %>%
+  group_by(BIOME,epl_2023) %>%
+  summarise(count = n(),.groups = 'drop') %>%
+  pivot_wider(names_from = epl_2023, values_from = count, values_fill = 0) %>%
+  relocate(WP, .before = MP)%>%
+  relocate(NP, .after = PP) %>%
+   bind_rows(
+     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
+       mutate(BIOME = "TOTAL")))
 
 ```
 
