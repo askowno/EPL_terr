@@ -238,6 +238,8 @@ pa_sum_biome <- sa_pa_rall %>%
       summarise(.,across(`1990`:`2023`, \(x) sum(x , na.rm = TRUE)) %>%
             mutate(BIOME = "TOTAL")) ) # Adjust this column if needed
 
+write.csv(pa_sum_biome, file = "outputs/results_df_pa_9023_biome.csv") #export results
+
 #Summary of overall PA estate over time per biome
 pa_prop_sum_biome <- sa_pa_rall %>%   
   filter(!is.na(T_MAPCODE)) %>%
@@ -247,6 +249,8 @@ pa_prop_sum_biome <- sa_pa_rall %>%
   mutate(proportion = total_km2 / sum(total_km2)) %>%
   select(-total_km2)%>%
   pivot_wider(names_from = YEAR, values_from = proportion, values_fill = 0)
+
+write.csv(pa_prop_sum_biome, file = "outputs/results_df_prp_pa_9023_biome.csv") #export results
 
 # Summary of natural vs not natural PA estate (with prop pa per biome and prop nat within pas) 
 # first make summary of boime extent overall
