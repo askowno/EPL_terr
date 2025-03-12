@@ -31,7 +31,7 @@ library(PROJ) # seems to be required due to a conflict with postgres on some mac
 
 2\. National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
 
-3\. Protected Areas vector feature geodatabse prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additioal assignments such as World Heritage Site status. This data also includes numerous defacto PAs, the information for which was provided by government Conservation authorities. A full description of the steps to generate the PA data can be found here...
+3\. Protected Areas vector feature geodatabse prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additioal assignments such as World Heritage Site status. This data also includes numerous defacto PAs, the information for which was provided by government Conservation authorities. SAPAD 2024Q4 (March 2025) data used.
 
 *The terra package in R allows for direct access to ESRI file geodatabases and generation of SpatRaster and SpatVector objects used in this analysis.*
 
@@ -73,7 +73,7 @@ veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | ve
 vegrast <- rasterize(veg,lc1990,"T_MAPCODE")
 
 #add PA data
-pa <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "SANBI_PA_2024Q2_AEA") #ensure it uses proj =  wgs84 aea cm 25 -24 -33 
+pa <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "SANBI_PA_2024Q4_Mar2025") #ensure it uses proj =  wgs84 aea cm 25 -24 -33 
 ```
 
 ### Mask out Lesotho and Eswatini
