@@ -14,7 +14,7 @@ execute:
 
 ## Approach
 
-Cross tabulate terrestrial ecosystem map (vegetation) with land cover change and protected areas maps for 1990-2022. Cross tabulate terrestrial ecosystem type (vegetation) data with land cover 1990-2022 and Protected Areas for South Africa. This analysis is focussed on producing statistics on protected areas coverage for South Africa and includes steps to mask out ecosystem extent that extends into Eswatini and Lesotho. The results carry the text "SA" to denote this.
+Cross tabulate terrestrial ecosystem map (vegetation) with land cover change and protected areas maps for 1990-2022. Cross tabulate terrestrial ecosystem type (vegetation) data with land cover 1990-2022 and Protected Areas for South Africa. This analysis is focused on producing statistics on protected areas coverage for South Africa and includes steps to mask out ecosystem extent that extends into Eswatini and Lesotho. The results carry the text "SA" to denote this.
 
 ```{r}
 #knitr::opts_chunk$set(eval = FALSE)
@@ -31,7 +31,7 @@ library(PROJ) # seems to be required due to a conflict with postgres on some mac
 
 2\. National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
 
-3\. Protected Areas vector feature geodatabse prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additioal assignments such as World Heritage Site status. This data also includes numerous defacto PAs, the information for which was provided by government Conservation authorities. SAPAD 2024Q4 (March 2025) data used.
+3\. Protected Areas vector feature geodatabase prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additional assignments such as World Heritage Site status. This data also includes numerous defacto PAs, the information for which was provided by government Conservation authorities. SAPAD 2024Q4 (March 2025) data used.
 
 *The terra package in R allows for direct access to ESRI file geodatabases and generation of SpatRaster and SpatVector objects used in this analysis.*
 
