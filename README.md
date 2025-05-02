@@ -31,7 +31,7 @@ PA extent over time per biome (including natural and non natural portions of PAs
 
 Proportional PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_prp_pa_9023_biome.csv](outputs/results_df_prp_pa_9023_biome.csv)
 
-#### Additional analysis to incorporate the negative impact of invasive alien plants within Protected Areas in the calculation of EPL for 2023. 
+#### Additional analysis to incorporate the negative impact of invasive alien plants within Protected Areas in the calculation of EPL for 2023.
 
 Terrestrial Ecosystem Protection Level was calculated with the inclusion of additional steps to utilise combined invasive alien plant data. This assessment is for 2023 only and highlights ecosystem types for which protection within the PA network is compromised by dense invasive alien plant occurrence.
 
