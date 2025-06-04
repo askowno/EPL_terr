@@ -333,7 +333,7 @@ epl2018 <- tb_tar %>%
 write.csv(epl2018, file = "outputs/results_df_EPL_2018_invasives2.csv") #export results 
 ```
 
-#### **Summarise Ecosystem Protection Levels for 2018 and 2024  per Biome & calculate EPL Index**
+#### **Summarise Ecosystem Protection Levels for 2018 and 2024 per Biome & calculate EPL Index**
 
 EPL Index calculation (Harris et al in prep)
 
