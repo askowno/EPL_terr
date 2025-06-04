@@ -4,11 +4,11 @@
 
 *South African National Biodiversity Institute (SANBI)*
 
-February 2025
+June 2025
 
 #### Summary
 
-*This Repository contains a workflow that results in the 2025 Ecosystem Protection Level indicators for Terrestrial Ecosystems of South Africa. The terrestrial ecosystem map (vegetation), land cover change data and protected areas time series data were prepared in ARCGIS PRO and imported to R. The three layers were aligned and stacked and then cross tabulated (using the terra package). This analysis is focused on producing statistics on protected areas coverage for South Africa and includes steps to mask out ecosystem extent that extends into Eswatini and Lesotho. The results were summarised in R (using tidyverse package) and Ecosystem Protection Level was calculated for each type.*
+*This Repository contains a workflow that results in the NBA 2025 Ecosystem Protection Level indicators for Terrestrial Ecosystems of South Africa. The terrestrial ecosystem map (vegetation), land cover change data and protected areas time series data were prepared in ARCGIS PRO and imported to R. The three layers were aligned and stacked and then cross tabulated (using the terra package) for each time point (2018 and 2014). This analysis is focused on producing statistics on protected areas coverage for South Africa and includes steps to mask out ecosystem extent that extends into Eswatini and Lesotho. The results were summarised in R (using tidyverse package) and Ecosystem Protection Level was calculated for each type for 2018 and 2014.*
 
 ``` mermaid
 flowchart LR; 

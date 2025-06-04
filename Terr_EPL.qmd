@@ -1,7 +1,7 @@
 ---
 title: "Terrestrial Ecosystem Protection Level"
 author: "SANBI"
-date: January 2025
+date: June 2025
 format: 
  html:
   toc: true
@@ -43,28 +43,7 @@ lc2018 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2018_7class.tif")
 lc2020 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2020_7class.tif")
 lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
 
-#aggregate to test - drop this step when all is working - full processing takes 16hours--------------------------------------------------- 
-
-# agg_fact <- 20
-#  mode_function <- function(x) {
-#      ux <- unique(x)
-#      ux[which.max(tabulate(match(x, ux)))]
-#  }
-# lc1990 <- aggregate(lc1990, fact = agg_fact, fun = mode_function)
-# lc2014 <- resample(lc2014, lc1990, method = "near")
-# lc2018 <- resample(lc2018, lc1990, method = "near")
-# lc2020 <- resample(lc2020, lc1990, method = "near")
-# lc2022 <- resample(lc2022, lc1990, method = "near")
-# #--------------------------------------------------------
-# 
-# #reclassify to nat 1 vs not natural 2 (no data 0) 
-# lc1990 <- ifel(lc1990 < 2, lc1990, 2) 
-# lc2014 <- ifel(lc2014 < 2, lc2014, 2)
-# lc2018 <- ifel(lc2018 < 2, lc2018, 2)
-# lc2020 <- ifel(lc2020 < 2, lc2020, 2)
-# lc2022 <- ifel(lc2022 < 2, lc2022, 2)
-
-# add vegetation data
+# Add vegetation data
 veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
 
 # to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
@@ -99,7 +78,7 @@ Subset PA data for each time point using DECL_YEAR, excluding properties degazet
 Rasterize PA layers at each time point, using PA SUBTYPE attribute, and snapping to the land cover grid.
 
 ```{r}
-#knitr::opts_chunk$set(eval = FALSE)
+
 #Data preparation
 
 # Create PA vectors for each time point
@@ -111,6 +90,7 @@ pa2018 <- subset(pa, pa$DECL_YEAR <  2019 & pa$UNDECL_YEA >2018)
 pa2020 <- subset(pa, pa$DECL_YEAR <  2021 & pa$UNDECL_YEA >2020)
 pa2022 <- subset(pa, pa$DECL_YEAR <  2023 & pa$UNDECL_YEA >2022)
 pa2023 <- subset(pa, pa$DECL_YEAR <  2024 & pa$UNDECL_YEA >2023)
+pa2024 <- subset(pa, pa$DECL_YEAR <  2025 & pa$UNDECL_YEA >2024)
 # Create PA rasters
 pr1990 <- rasterize(pa1990,lc1990,"SUBTYPE") 
 pr2000 <- rasterize(pa2000,lc1990,"SUBTYPE") 
@@ -120,9 +100,8 @@ pr2018 <- rasterize(pa2018,lc1990,"SUBTYPE")
 pr2020 <- rasterize(pa2020,lc1990,"SUBTYPE") 
 pr2022 <- rasterize(pa2022,lc1990,"SUBTYPE") 
 pr2023 <- rasterize(pa2023,lc1990,"SUBTYPE") 
-
+pr2024 <- rasterize(pa2024,lc1990,"SUBTYPE") 
  
-  
 ```
 
 ## Analysis:
@@ -134,7 +113,7 @@ Stack the land cover for each time period with the corresponding PA data and the
 Cross-tabulate the raster stack and add a column denoting the YEAR to the output table (in tibble format). It is crucial to use the NA values in the cross tabulation as this will help with tracking LC outside of the PA network - this is because the PA vector and hence the raster is not continuous (not a wall to wall map) and there is no data between PA features.
 
 ```{r}
-#knitr::opts_chunk$set(eval = FALSE)
+
 # Step 3. Crosstabulate vegetation, land cover and PA. Align the land cover time point with the PA time point as far as possible 
  
 tb1990 <- as_tibble(crosstab(c(lc1990,vegrast_masked,pr1990), useNA=TRUE))
@@ -153,15 +132,17 @@ tb2022 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2022),useNA=TRUE))
 tb2022 <- tb2022 %>% add_column(YEAR =2022) %>% rename(LC = nlc2022_7class) 
 tb2023 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2023),useNA=TRUE))
 tb2023 <- tb2023 %>% add_column(YEAR =2023) %>% rename(LC = nlc2022_7class) 
+tb2024 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2024),useNA=TRUE))
+tb2024 <- tb2024 %>% add_column(YEAR =2024) %>% rename(LC = nlc2022_7class)
 ```
 
 Step 5. Combine the output tables and convert pixel counts to extent in Km2 . Pixels in the rasters are 20m x 20m, so conversion requires multiplication by cell area (400m2) and division by 1000 000 to result in km2. Filter out marine space lying beyond the vegetation map and land cover maps. Recode the NA pixels in the PA SUBTYPE column to "NOTPA"; this allows for statistics on land cover change inside and outside of PAs. Filter out T_MAPCODE = Null as these are a small number of pixels on borders, but be careful to retain T_MAPCODE NA as these are FW and EST areas inside of PAS, rename as "NOTVEG".
 
 ```{r}
-#knitr::opts_chunk$set(eval = FALSE)
+
 # Step 5. 
 
-rlist = list(tb1990,tb2000, tb2010, tb2015, tb2018, tb2020, tb2022, tb2023) 
+rlist = list(tb1990,tb2000, tb2010, tb2015, tb2018, tb2020, tb2022, tb2023, tb2024) 
 sa_pa_rall <- rlist %>%  bind_rows()%>%   
   as_tibble() %>% 
   filter(n != 0, !is.na(LC), LC != "NaN", LC != 0,!is.na(T_MAPCODE)) %>% # T_MAPCODE NAs are outside of SA,  LC NA is outside of SA territory, LC = 0 is marine, n = 0 is combos not ecounteredd. NB -  KEEP the TRUE  NAs for T_MAPCODE which are EST and FW see earlier step to adjust veg input layer to ensure these can be seperated from T_MAPCODE NAs from masking process.
@@ -212,7 +193,7 @@ sa_pa_rall <- sa_pa_rall %>%
   inner_join(tb_veg, by = "T_MAPCODE")
  
 # # write output to csv for excel use
-write.csv(sa_pa_rall, file = "outputs/sa_pa_rall.csv") # a test vesion has been output sa_pa_rall_test based on aggregation to 400m pixels
+write.csv(sa_pa_rall, file = "outputs/sa_pa_rall.csv") 
 ```
 
 ## Results:
@@ -235,10 +216,10 @@ pa_sum_biome <- sa_pa_rall %>%
   summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
   pivot_wider(names_from = YEAR, values_from = tot_km2, values_fill = 0) %>%
    bind_rows(
-      summarise(.,across(`1990`:`2023`, \(x) sum(x , na.rm = TRUE)) %>%
+      summarise(.,across(`1990`:`2024`, \(x) sum(x , na.rm = TRUE)) %>%
             mutate(BIOME = "TOTAL")) ) # Adjust this column if needed
 
-write.csv(pa_sum_biome, file = "outputs/results_df_pa_9023_biome.csv") #export results
+write.csv(pa_sum_biome, file = "outputs/results_df_pa_9024_biome.csv") #export results
 
 #Summary of overall PA estate over time per biome
 pa_prop_sum_biome <- sa_pa_rall %>%   
@@ -250,18 +231,19 @@ pa_prop_sum_biome <- sa_pa_rall %>%
   select(-total_km2)%>%
   pivot_wider(names_from = YEAR, values_from = proportion, values_fill = 0)
 
-write.csv(pa_prop_sum_biome, file = "outputs/results_df_prp_pa_9023_biome.csv") #export results
+write.csv(pa_prop_sum_biome, file = "outputs/results_df_prp_pa_9024_biome.csv") #export results
 
 # Summary of natural vs not natural PA estate (with prop pa per biome and prop nat within pas) 
+
 # first make summary of boime extent overall
 biome_total_km2 <- sa_pa_rall %>%
- filter(., YEAR ==2023) %>%
+ filter(., YEAR ==2024) %>%
   group_by(BIOME)%>% 
   summarise(biome_km2 = sum(km2))
 
 # them make a summary table of pa extent per biome showing nat and not nat portions
-pa2023_natnatnot_biome <- sa_pa_rall %>%
-  filter(TYPE != "NOTPA", YEAR == 2023, !is.na(T_MAPCODE)) %>%
+pa2024_natnatnot_biome <- sa_pa_rall %>%
+  filter(TYPE != "NOTPA", YEAR == 2024, !is.na(T_MAPCODE)) %>%
              group_by(LC_text, BIOME) %>%
   summarise(total_km2 = sum(km2),.groups = 'drop') %>%
   pivot_wider(names_from = LC_text, values_from = total_km2, values_fill = 0) %>%
@@ -273,89 +255,11 @@ pa2023_natnatnot_biome <- sa_pa_rall %>%
   mutate(panat_prop = Nat/biome_km2) %>%
   mutate(prop_of_pa_nat = Nat/pa_km2)
   
-write.csv(pa2023_natnatnot_biome, file = "outputs/results_df_pa2023_natnotnat_biome.csv") #export results
-
-
-```
-
-2.  Calculate Ecosystem Protection Levels and % protection per ecosystem type. Import Targets from veg data, add this to table and calculate targets as km2 per ecosystem type. Also calculate the GBF 30% target per ecosystem type. Then calculate the percentage PA coverage per type.
-
-```{r}
-# EPL computations that only consider natural habitat as contributing to targets
-# alternative calculations include non natural areas(specifically secondary natural) # as contributing to targets 
-
-targets <- sa_pa_rall %>%
-  filter(YEAR == 2023) %>% 
-  group_by(T_MAPCODE, BIOME, T_CNSRV_TRGT) %>%
-  summarise(type_tot_km2 = sum(km2),.groups = 'drop') %>%
-  mutate(gbf_tar_km2 = 0.3 * type_tot_km2, sa_tar_km2 = T_CNSRV_TRGT/100 * type_tot_km2) 
- 
-
-#EPL for NAT only  
-km2_sum_veg <- sa_pa_rall %>% 
-  filter(LC ==1,  TYPE!= "NOTPA") %>% # Make sure that only natural areas count 
-  group_by(T_MAPCODE, YEAR) %>%
-  summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
-  pivot_wider(names_from = YEAR, values_from = tot_km2) 
-   
-epl <- targets %>% 
-  left_join(km2_sum_veg, by = "T_MAPCODE") %>%
-  mutate(prop_panat_2018 = `2018`/type_tot_km2) %>% #use backquotes to id the columns 
-  mutate(prop_panat_2023 = `2023`/type_tot_km2) %>%
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) %>%
-    mutate(epl_2018 = ifelse(`2018` >= sa_tar_km2, "WP", ifelse(`2018` >= sa_tar_km2/2, "MP", ifelse(`2018` >= sa_tar_km2/20, "PP", "NP")))) %>%
-  mutate(epl_2023 = ifelse(`2023` >= sa_tar_km2, "WP", ifelse(`2023` >= sa_tar_km2/2, "MP", ifelse(`2023` >= sa_tar_km2/20, "PP", "NP")))) %>% 
-rename (panat1990 =`1990`, panat2000 =`2000`, panat2010 =`2010`, panat2015 =`2015`, panat2018 =`2018`, panat2020 =`2020`, panat2022 =`2022`, panat2023 =`2023`) 
-
-  
-write.csv(epl, file = "outputs/results_df_EPL_veg.csv") #export results 
-
-#summarise EPL per biome
-epl_sum_biome <- epl %>%
-  group_by(BIOME,epl_2023) %>%
-  summarise(count = n(),.groups = 'drop') %>%
-  pivot_wider(names_from = epl_2023, values_from = count, values_fill = 0) %>%
-  relocate(WP, .before = MP)%>%
-  relocate(NP, .after = PP) %>%
-   bind_rows(
-     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
-       mutate(BIOME = "TOTAL")))
-
-write.csv(epl_sum_biome, file = "outputs/results_df_EPL_biome.csv") #export results 
-
-# EPL for NAT and SEC NAT - rerun but use NATUAL and SECONDARY NATURAL as contributing to targets
-
-km2_sum_veg_secnat <- sa_pa_rall %>%   
-  filter(LC <3, TYPE!= "NOTPA") %>% 
-  group_by(T_MAPCODE, YEAR) %>%
-  summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
-  pivot_wider(names_from = YEAR, values_from = tot_km2) 
-   
-epl_secnat <- targets %>% 
-  left_join(km2_sum_veg_secnat, by = "T_MAPCODE") %>%
-  mutate(prop_panatsecnat_2018 = `2018`/type_tot_km2) %>% #use backquotes to id the columns 
-  mutate(prop_panatsecnat_2023 = `2023`/type_tot_km2) %>%
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) %>%
-    mutate(epl_2018_natsecnat = ifelse(`2018` >= sa_tar_km2, "WP", ifelse(`2018` >= sa_tar_km2/2, "MP", ifelse(`2018` >= sa_tar_km2/20, "PP", "NP")))) %>%
-  mutate(epl_2023_natsecnat = ifelse(`2023` >= sa_tar_km2, "WP", ifelse(`2023` >= sa_tar_km2/2, "MP", ifelse(`2023` >= sa_tar_km2/20, "PP", "NP")))) %>% 
-rename (panatsecnat1990 =`1990`, panatsecnat2000 =`2000`, panatsecnat2010 =`2010`, panatsecnat2015 =`2015`, panatsecnat2018 =`2018`, panatsecnat2020 =`2020`, panatsecnat2022 =`2022`, panatsecnat2023 =`2023`) 
-
-write.csv(epl_secnat, file = "outputs/results_df_EPL_veg_natsecnat.csv") #export results 
-
-#summarise EPL per biome using NAT and SEC NAT
-epl_sum_biome_natsecnat <- epl %>%
-  group_by(BIOME,epl_2023) %>%
-  summarise(count = n(),.groups = 'drop') %>%
-  pivot_wider(names_from = epl_2023, values_from = count, values_fill = 0) %>%
-  relocate(WP, .before = MP)%>%
-  relocate(NP, .after = PP) %>%
-   bind_rows(
-     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
-       mutate(BIOME = "TOTAL")))
-
-write.csv(epl_sum_biome_natsecnat, file = "outputs/results_df_EPL_biome_natsecnat.csv") #export results 
+write.csv(pa2024_natnatnot_biome, file = "outputs/results_df_pa2024_natnotnat_biome.csv") #export results
 
 ```
+
+Plots
 
 ```{r}
 ## 1) plot the overal PA TYPE over time  
