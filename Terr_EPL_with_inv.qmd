@@ -29,7 +29,7 @@ library(PROJ) # seems to be required due to a conflict with postgres on some mac
 
 The 7 class South African National Land Cover data set for 2018 and 2022 (prepared by SANBI based on National Department of Forestry, Fisheries and the Environment SACALC data) was combined with invasive alien plant data from various sources described in the following workflow: [INV_terr /Invasives_combined.qmd](https://github.com/askowno/INV_terr/blob/main/Invasives_combined.qmd), and resulting in a 8 class national land cover.
 
-This 8 class land cover was cross tabulated with the National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019] and the Protected Areas vector feature geodatabase prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additional assignments such as World Heritage Site status). This data also includes numerous defacto PAs, the information for which was provided by government Conservation Authorities. PACA 2024Q4 (March 2025) data used as initial source.
+This 8 class land cover was cross tabulated with the National Vegetation Map 2024 version, vector feature geodatabase (ESRI file geodatabase) (released January 2025) curated by SANBI [@rutherford2006; @Dayaram2019] and the Protected Areas vector feature geodatabase prepared by SANBI, built from Protected and Conserved Areas (PACA) database curated by South Africa's National Department of Forestry Fisheries and the Environment. It is a flattened spatial layer with no overlaps (PACA is not flattened and has overlapping features representing each legal declaration and declaration, and separate features for additional assignments such as World Heritage Site status). This data also includes numerous defacto PAs, the information for which was provided by government Conservation Authorities. PACA 2024Q3 (released March 2025) data used as initial source.
 
 ```{r}
 #Add land cover data  (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra.
@@ -66,9 +66,9 @@ vegrast_masked <- mask(vegrast, mask_esw_les, maskvalue=TRUE)
 
 ### Data preparation:
 
-Subset PA data for 2018 2024 using DECL_YEAR, excluding properties degazetted using UNDECL_YEA. In preparation for this selection Decl_year is set to 0 when unknown, and Undecl_year is set to 9999 for those PAs not ever degazetted.
+Subset PA data for 2018 and 2024 using DECL_YEAR, excluding properties degazetted using UNDECL_YEA. In preparation for this selection DECL_YEAR is set to 0 when unknown, and UNDCL_YEA is set to 9999 for those PAs that have never been degazetted.
 
-Rasterize PA layers at each time point, using PA SUBTYPE attribute, and snapping to the land cover grid.
+Rasterize PA layers at each time point, using PA_SUBTYPE attribute, and snapping to the land cover grid.
 
 ```{r}
 
@@ -85,7 +85,7 @@ pr2024 <- rasterize(pa2024,lc2022_inv,"SUBTYPE")
 
 ### Analysis:
 
-*Cross-tabulate land cover (including invasives) with vegetation and protected areas.*
+*Cross-tabulate land cover (including invasive plant data) with vegetation map and protected areas.*
 
 Stack the land cover for each time period with the corresponding PA data and the vegetation data.
 
@@ -93,7 +93,7 @@ Cross-tabulate the raster stack. It is crucial to use the NA values in the cross
 
 ```{r}
 
-# Step 3. Crosstabulate vegetation, land cover (with invasives) and PA. Align the land cover time point with the PA time point as far as possible 
+# Step 3. Cross tabulate vegetation, land cover (with invasives) and PAs. Align the land cover time point with the PA time point as far as possible (2018 land cover for 2018 PA; 2022 land cover for 2024 PA).
  
 tb2018 <- as_tibble(crosstab(c(lc2018_inv,vegrast_masked,pr2018),useNA=TRUE))
 tb2018 <- tb2018 %>% add_column(YEAR =2018) %>% rename(LC = lc2018_inv_max2) 
@@ -132,12 +132,13 @@ Calculate the required per ecosystem type metrics: total extent, extent within P
 
 options(scipen = 999)
 # clean up the results of the cross tabulation 
-# tb2024 <- read.csv("C:/Rdata/EPL_terr/outputs/pa2024_inv2.csv") # read in data to avoid cross tab
+tb2024 <- read.csv("C:/Rdata/EPL_terr/outputs/pa2024_inv2.csv") # read in data to avoid cross tab
 tb2024 <- tb2024 %>%
   filter(n != 0, !is.na(LC), LC != "NaN", LC != 0,!is.na(T_MAPCODE)) %>% 
   mutate(SUBTYPE = if_else(SUBTYPE == "" | is.na(SUBTYPE), "NOTPA", SUBTYPE)) %>% # Non PA pixels we want to keep for the stats
-         mutate(km2 = (n*400)/1000000, #change to 400 without aggregation
+         mutate(km2 = (n*400)/1000000, 
          LC_text = ifelse(LC==1, "Nat", ifelse(LC==8, "Inv", "Notnat")),
+         # extra code to add in Biome and PA Types - not required
          BIOME = str_replace_all(T_MAPCODE, 
                                   c("AT.*" = "Albany Thicket", 
                                     "AZ.*" = "Azonal", 
@@ -173,38 +174,39 @@ tb2024 <- tb2024 %>%
 # make a datatable from the vegsa, then extract CONSTARGETS for EPL computation
 tb_tar <- as_tibble(veg)
 tb_tar <- tb_tar %>% 
-  select(c(T_MAPCODE, T_CNSRV_TRGT)) %>%
-  distinct(T_MAPCODE, T_CNSRV_TRGT) %>%
-  filter(T_MAPCODE != "NOTVEG", T_MAPCODE != "", T_MAPCODE != "<Null>", T_MAPCODE != "Gd9") %>%
+  select(c(T_MAPCODE, T_CNSRV_TRGT, T_BIOME)) %>%
+  distinct(T_MAPCODE, T_CNSRV_TRGT, T_BIOME) %>%
+  filter(T_MAPCODE != "NOTVEG", T_MAPCODE != "", T_MAPCODE != "<Null>", T_MAPCODE != "Gd9") %>% # Gd9 is a veg type only occuring in Lesotho and needs to excluded from SA stats 
   rename(tar_sa = T_CNSRV_TRGT) %>%
+  relocate(tar_sa, .after = T_BIOME) %>%
   mutate(tar_gbf = 30)
   
-#  table of full extent per type
+#  table of full (potential / historical) extent per ecosystem type
 tb_veg <- tb2024 %>%
   filter(T_MAPCODE != "NOTVEG") %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_veg = sum(km2),.groups = 'drop')
 
-# table of eco extent in pa - per type  
+# table of ecosystem extent in PA - per type  
 tb_vegpa24 <- tb2024 %>%
  filter(TYPE != "NOTPA",T_MAPCODE != "NOTVEG") %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_vegpa24 = sum(km2),.groups = 'drop') 
 
-# table of nat remnant extent in pa - per type ( inv counted as nat)  
+# table of nat ecosystem (remnants) extent in PA - per type (invaded areas counted as natural at this point)
 tb_vegrempa24 <- tb2024 %>%
  filter(TYPE != "NOTPA", T_MAPCODE != "NOTVEG", LC_text != "Notnat") %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_vegrempa24 = sum(km2),.groups = 'drop') 
 
-# table of inv extent within remnants in pa - per type  
+# table of invaded extent within renmants in PA - per type  
 tb_invpa24 <- tb2024 %>%
  filter(TYPE != "NOTPA",T_MAPCODE != "NOTVEG", LC_text == "Inv") %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_invpa24 = sum(km2),.groups = 'drop') 
 
 
-# join up the tables and calculate EPL
+# join  the tables and calculate EPL
 epl2024 <- tb_tar %>%
   left_join(tb_veg, by = "T_MAPCODE") %>%
   left_join(tb_vegpa24, by = "T_MAPCODE") %>%
@@ -215,9 +217,7 @@ epl2024 <- tb_tar %>%
     # make targets km2
     mutate(ext_tar_sa = tar_sa/100 * ext_veg, 
            ext_tar_gbf = tar_gbf/100 * ext_veg) %>%
-  
-  #calc EPL  rounding proportions to 3 decimal places
-  #BASE EPL using full extent - counting all of eco in PA
+      #BASE EPL using full extent - counting all of eco in PA
   mutate(epl_base24 = ifelse(ext_vegpa24 >= ext_tar_sa, "WP", 
                              ifelse(ext_vegpa24 >= ext_tar_sa*0.5, "MP", 
                                     ifelse(ext_vegpa24 >= ext_tar_sa*0.05, "PP", "NP" )))) %>%
@@ -227,13 +227,13 @@ epl2024 <- tb_tar %>%
                                     ifelse(ext_vegrempa24 >= ext_tar_sa*0.05, "PP", "NP" )))) %>%
   #ADJUSTED EPL using natural and downweighting contribution of invaded areas 
   #make new col for adjustments
-  #invaded areas downweighted by 70% (ie only 30% of ext will contribute to target achievement)
+  #invaded areas downweighted by 70% (ie only 30% of extent will contribute to target achievement)
   mutate(ext_vegrempa_inv24 = ext_vegrempa24 - (ext_invpa24*0.7)) %>%
   mutate(epl_nat_inv24 = ifelse(ext_vegrempa_inv24 >= ext_tar_sa, "WP", 
                              ifelse(ext_vegrempa_inv24 >= ext_tar_sa*0.5, "MP", 
                                     ifelse(ext_vegrempa_inv24 >= ext_tar_sa*0.05, "PP", "NP" ))))
  
-#export the results of the adjusted EPL (epl_nat_exclinv is th enew data to compare to the standard EPL)
+#export the results of the base, natural and adjusted EPL for 2024
 write.csv(epl2024, file = "outputs/results_df_EPL_2024_invasives2.csv") #export results 
 ```
 
@@ -243,11 +243,11 @@ write.csv(epl2024, file = "outputs/results_df_EPL_2024_invasives2.csv") #export 
 # Build up the tables  required to compute EPL2018 
 
 
-# tb2018 <- read.csv("C:/Rdata/EPL_terr/outputs/pa2018_inv2.csv") # read in data to avoid cross tab
+tb2018 <- read.csv("C:/Rdata/EPL_terr/outputs/pa2018_inv2.csv") # read in data to avoid cross tab
 tb2018 <- tb2018 %>%
   filter(n != 0, !is.na(LC), LC != "NaN", LC != 0,!is.na(T_MAPCODE)) %>% 
   mutate(SUBTYPE = if_else(SUBTYPE == "" | is.na(SUBTYPE), "NOTPA", SUBTYPE)) %>% # Non PA pixels we want to keep for the stats
-         mutate(km2 = (n*400)/1000000, #change to 400 without aggregation
+         mutate(km2 = (n*400)/1000000,
          LC_text = ifelse(LC==1, "Nat", ifelse(LC==8, "Inv", "Notnat")),
          BIOME = str_replace_all(T_MAPCODE, 
                                   c("AT.*" = "Albany Thicket", 
@@ -280,7 +280,6 @@ tb2018 <- tb2018 %>%
   relocate(km2, .after = n)%>%
   relocate(TYPE, .after = SUBTYPE)%>%
   relocate(YEAR, .after = TYPE)
-
 
 # table of eco extent in pa2018 - per type  
 tb_vegpa18 <- tb2018 %>%
@@ -330,160 +329,152 @@ epl2018 <- tb_tar %>%
                              ifelse(ext_vegrempa_inv18 >= ext_tar_sa*0.5, "MP", 
                                     ifelse(ext_vegrempa_inv18 >= ext_tar_sa*0.05, "PP", "NP" ))))
  
-#export the results of the adjusted EPL (epl_nat_exclinv is th enew data to compare to the standard EPL)
+#export the results of the adjusted EPL2018
 write.csv(epl2018, file = "outputs/results_df_EPL_2018_invasives2.csv") #export results 
 ```
 
-*Calculate biome level summary of EPL adjusted for invasives 2024*
+#### **Summarise Ecosystem Protection Levels for 2018 and 2024  per Biome & calculate EPL Index**
+
+EPL Index calculation (Harris et al in prep)
+
+(sum of WP \*3 + sum of MP \*2 + sum of PP \*1 + sum NP \*0 ) / sum all type \*3
+
+*Calculate biome level summary of EPL 2024 and calculate EPLI 2024*
 
 ```{r}
 
-#summarise EPL per biome with adjustments for invasives 
+#summarise EPL 2024 per biome with adjustments for invasives 
 epl2024inv_sum <- epl2024 %>%
-  mutate(BIOME = str_replace_all(T_MAPCODE, 
-                                  c("AT.*" = "Albany Thicket", 
-                                    "AZ.*" = "Azonal", 
-                                    "CB.*" = "IOCB", 
-                                    "D.*"  = "Desert", 
-                                    "FF.*" = "Fynbos", 
-                                    "FR.*" = "Fynbos",
-                                    "FS.*" = "Fynbos",
-                                    "FO.*" = "Forest", 
-                                    "G.*"  = "Grassland",  
-                                    "NK.*" = "Nama-Karoo", 
-                                    "SK.*" = "Succulent Karoo",
-                                    "SV.*" = "Savanna",
-                                    "NOTVEG.*" = "NOTVEG"))) %>%
-  group_by(BIOME,epl_nat_inv24) %>%
+  group_by(T_BIOME,epl_nat_inv24) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat_inv24, 
               values_from = count, values_fill = 0) %>%
   relocate(WP, .before = MP)%>%
   relocate(NP, .after = PP) %>%
-   bind_rows(
-     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
-       mutate(BIOME = "TOTAL")))
+  # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+  # Add EPLindex
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
 
 write.csv(epl2024inv_sum, file = "outputs/results_df_EPL_2024_biome_invasives2.csv") #export results 
 
-#summarise EPL per biome without using any adjustments for invasives (similar to NBA 2018)
+#summarise EPL 2024 per biome without using any adjustments for invasives (similar to NBA 2018)
 epl2024nat_sum <- epl2024 %>%
-  mutate(BIOME = str_replace_all(T_MAPCODE, 
-                                  c("AT.*" = "Albany Thicket", 
-                                    "AZ.*" = "Azonal", 
-                                    "CB.*" = "IOCB", 
-                                    "D.*"  = "Desert", 
-                                    "FF.*" = "Fynbos", 
-                                    "FR.*" = "Fynbos",
-                                    "FS.*" = "Fynbos",
-                                    "FO.*" = "Forest", 
-                                    "G.*"  = "Grassland",  
-                                    "NK.*" = "Nama-Karoo", 
-                                    "SK.*" = "Succulent Karoo",
-                                    "SV.*" = "Savanna",
-                                    "NOTVEG.*" = "NOTVEG"))) %>%
-  group_by(BIOME,epl_nat24) %>%
+    group_by(T_BIOME,epl_nat24) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat24, 
               values_from = count, values_fill = 0) %>%
   relocate(WP, .before = MP)%>%
   relocate(NP, .after = PP) %>%
-   bind_rows(
-     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
-       mutate(BIOME = "TOTAL")))
+   # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+  # Add EPLindex
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
 
 write.csv(epl2024nat_sum, file = "outputs/results_df_EPL_2024_biome2_natural.csv") #export results 
 
 ```
 
-*Calculate biome level summary of EPL adjusted for invasives 2018*
+*Calculate biome level summary of EPL 2018 and EPLI 2018*
 
 ```{r}
 
 #summarise EPL2018 per biome with adjustments for invasives 
 epl2018inv_sum <- epl2018 %>%
-  mutate(BIOME = str_replace_all(T_MAPCODE, 
-                                  c("AT.*" = "Albany Thicket", 
-                                    "AZ.*" = "Azonal", 
-                                    "CB.*" = "IOCB", 
-                                    "D.*"  = "Desert", 
-                                    "FF.*" = "Fynbos", 
-                                    "FR.*" = "Fynbos",
-                                    "FS.*" = "Fynbos",
-                                    "FO.*" = "Forest", 
-                                    "G.*"  = "Grassland",  
-                                    "NK.*" = "Nama-Karoo", 
-                                    "SK.*" = "Succulent Karoo",
-                                    "SV.*" = "Savanna",
-                                    "NOTVEG.*" = "NOTVEG"))) %>%
-  group_by(BIOME,epl_nat_inv18) %>%
+    group_by(T_BIOME,epl_nat_inv18) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat_inv18, 
               values_from = count, values_fill = 0) %>%
   relocate(WP, .before = MP)%>%
   relocate(NP, .after = PP) %>%
-   bind_rows(
-     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
-       mutate(BIOME = "TOTAL")))
+   # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+  # Add EPLindex
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
 
 write.csv(epl2018inv_sum, file = "outputs/results_df_EPL_2018_biome_invasives2.csv") #export results 
 
 #summarise EPL per biome without using any adjustments for invasives (similar to NBA 2018)
 epl2018nat_sum <- epl2018 %>%
-  mutate(BIOME = str_replace_all(T_MAPCODE, 
-                                  c("AT.*" = "Albany Thicket", 
-                                    "AZ.*" = "Azonal", 
-                                    "CB.*" = "IOCB", 
-                                    "D.*"  = "Desert", 
-                                    "FF.*" = "Fynbos", 
-                                    "FR.*" = "Fynbos",
-                                    "FS.*" = "Fynbos",
-                                    "FO.*" = "Forest", 
-                                    "G.*"  = "Grassland",  
-                                    "NK.*" = "Nama-Karoo", 
-                                    "SK.*" = "Succulent Karoo",
-                                    "SV.*" = "Savanna",
-                                    "NOTVEG.*" = "NOTVEG"))) %>%
-  group_by(BIOME,epl_nat18) %>%
+    group_by(T_BIOME,epl_nat18) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat18, 
               values_from = count, values_fill = 0) %>%
   relocate(WP, .before = MP)%>%
   relocate(NP, .after = PP) %>%
-   bind_rows(
-     summarise(., across(WP:NP, \(x) sum(x, na.rm = TRUE))%>%
-       mutate(BIOME = "TOTAL")))
+   # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+  # Add EPLindex
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
 
 write.csv(epl2018nat_sum, file = "outputs/results_df_EPL_2018_biome2_natural.csv") #export results 
 ```
 
-Add in EPL Index calculation (Harris et al in prep)
-
-(sum of WP \*3 + sum of MP \*2 + sum of PP \*1 + sum NP \*0 ) / sum all type \*3
+#### **Make graphs for NBA**
 
 ```{r}
-
-```
-
-Make graphs for NBA
-
-load NBA package
-
-```{r}
+# to avoid rerunning spatial analysis load data from file...
 #data <- read_csv("C:/Rdata/EPL_terr/outputs/results_df_EPL_2024_biome_invasives2.csv")
-data <- epl2024inv_sum
-EPL <- data %>%
-   mutate(Total = rowSums(across(WP:NP))) %>%
-  rename(`Well Protected` = WP, `Moderately Protected` = MP, `Poorly Protected` = PP, `Not Protected` = NP ) # %>%
-  # select(-...1)
+#data <- read_csv("C:/Rdata/EPL_terr/outputs/results_df_EPL_2018_biome_invasives2.csv")
+
+# load nbaR package : first run this in console devtools::install_github("SANBI-NBA/nbaR") 
+library(nbaR)
+
+# Use NBA package to make EPL graph (need high res output for booklet)
+EPL <- epl2024inv_sum %>%
+    rename(`Well Protected` = WP, 
+           `Moderately Protected` = MP, 
+           `Poorly Protected` = PP, 
+           `Not Protected` = NP ) # %>%
+  # select(-...1) # required if importing from CSV
  
-bar_plot <- nba_plot(EPL,
-                  `BIOME`,
+epl24_bar_plot <- nba_plot(EPL,
+                  `T_BIOME`,
                   2:5,
                  CHRT = "bar",
                  NUM = TRUE,
                  LAB = "Percentage of ecosystem types",
                 SAVE = NULL)
 
-bar_plot
+epl24_bar_plot
+
+#make a line plot of EPL Index using 2018 and 2014 timepoints - request Natasha to impve this or add to package.
+
+EPLI <- epl2024inv_sum %>%
+  select(T_BIOME, EPLI) %>% 
+  rename(EPLI24 = EPLI) %>%
+  left_join(epl2018inv_sum, by ="T_BIOME") %>%
+   rename(EPLI18 = EPLI) %>%
+  select(T_BIOME,EPLI18, EPLI24) %>%
+  pivot_longer(cols = c(2,3), names_to = "Year", values_to = "EPLI") %>%
+    mutate(Year = case_when(
+    Year == "EPLI18" ~ "2018",
+    Year == "EPLI24" ~ "2024",
+    TRUE ~ Year
+  ))
+  
+  EPLI_line_plot <- ggplot(EPLI, aes(x = Year, y = EPLI, group = T_BIOME, color = T_BIOME)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  labs(x = "Year", y = "EPLI") +
+  scale_x_discrete(limits = c("2018", "2024"))
+  
+  EPLI_line_plot
 ```
