@@ -465,12 +465,27 @@ ggsave(
 
 #make a line plot of EPL Index using 2018 and 2014 timepoints - request Natasha to impve this or add to package.
 
+biome_colors <- c(
+  "Albany Thicket" = "darkgreen",
+  "Azonal" = "blue",
+  "Desert" =  "darkgrey",
+  "Forest" =  "darkblue",
+  "Fynbos"  =  "purple",
+  "Grassland"  = "green3",
+  "IOCB"  = "orange",
+  "Nama-Karoo" = "brown1",
+  "Savanna"  =  "brown",
+  "Succulent Karoo"  = "yellow3",
+  "Total" = "black"
+)
+
 EPLI <- epl2024inv_sum %>%
   select(T_BIOME, EPLI) %>% 
   rename(EPLI24 = EPLI) %>%
-  left_join(epl2018inv_sum, by ="T_BIOME") %>%
+   left_join(epl2018inv_sum, by ="T_BIOME") %>%
    rename(EPLI18 = EPLI) %>%
-  select(T_BIOME,EPLI18, EPLI24) %>%
+   rename(Biome = T_BIOME) %>%
+  select(Biome,EPLI18, EPLI24) %>%
   pivot_longer(cols = c(2,3), names_to = "Year", values_to = "EPLI") %>%
     mutate(Year = case_when(
     Year == "EPLI18" ~ "2018",
@@ -478,8 +493,9 @@ EPLI <- epl2024inv_sum %>%
     TRUE ~ Year
   ))
   
-  epli_line_plot <- ggplot(EPLI, aes(x = Year, y = EPLI, group = T_BIOME, color = T_BIOME)) +
-  geom_line(size = 1.2) +
+  epli_line_plot <- ggplot(EPLI, aes(x = Year, y = EPLI, group = Biome, color = Biome)) +
+  scale_color_manual(values = biome_colors) + 
+    geom_line(size = 1.2) +
   geom_point(size = 2) +
   theme_minimal() +
   labs(x = "Year", y = "EPLI") +
