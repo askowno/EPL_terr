@@ -394,7 +394,7 @@ pa_order <- c("NP", "NR", "FWA", "FNR", "PE", "MCA", "WHS", "SNR")
 prop_data3$TYPE <- factor(prop_data3$TYPE, levels = pa_order)
 
 # Create the plot
-plot <- ggplot(prop_data3, aes(x = as.factor(YEAR), y = proportion, fill = TYPE)) +
+plot3 <- ggplot(prop_data3, aes(x = as.factor(YEAR), y = proportion, fill = TYPE)) +
   geom_bar(stat = "identity", position = "stack") +  # Stacked bar chart for proportions
   scale_fill_manual(values = pa_colors) + 
   facet_wrap(~ BIOME, ncol = 5) +
@@ -414,7 +414,7 @@ plot <- ggplot(prop_data3, aes(x = as.factor(YEAR), y = proportion, fill = TYPE)
 #export the graph
 ggsave(
   filename = "outputs/pa_prop_biome_year_plot.jpeg", # File name
-  plot = plot,                            # Plot object
+  plot = plot3,                            # Plot object
   device = "jpeg",                        # File format
   width = 16, height = 12, units = "cm",   # Dimensions
   dpi = 300                               # Resolution

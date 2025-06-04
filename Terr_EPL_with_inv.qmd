@@ -454,6 +454,15 @@ epl24_bar_plot <- nba_plot(EPL,
 
 epl24_bar_plot
 
+#export the graph
+ggsave(
+  filename = "outputs/epl24_bar_plot.jpeg", # File name
+  plot = epl24_bar_plot,                   # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+
 #make a line plot of EPL Index using 2018 and 2014 timepoints - request Natasha to impve this or add to package.
 
 EPLI <- epl2024inv_sum %>%
@@ -469,12 +478,21 @@ EPLI <- epl2024inv_sum %>%
     TRUE ~ Year
   ))
   
-  EPLI_line_plot <- ggplot(EPLI, aes(x = Year, y = EPLI, group = T_BIOME, color = T_BIOME)) +
+  epli_line_plot <- ggplot(EPLI, aes(x = Year, y = EPLI, group = T_BIOME, color = T_BIOME)) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
   theme_minimal() +
   labs(x = "Year", y = "EPLI") +
   scale_x_discrete(limits = c("2018", "2024"))
   
-  EPLI_line_plot
+  epli_line_plot
+  
+  #export the graph
+ggsave(
+  filename = "outputs/epli_line_plot.jpeg", # File name
+  plot = epli_line_plot,                   # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
 ```

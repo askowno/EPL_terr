@@ -32,6 +32,10 @@ The overall results can be found here: [outputs/results_df_EPL_2024_invasives2.c
 
 Biome level summary results can be found here: [outputs/results_df_EPL_2024_biome_invasives2.csv](outputs/results_df_EPL_2024_biome_invasives2.csv) & [outputs/results_df_EPL_2018_biome_invasives2.csv](outputs/results_df_EPL_2018_biome_invasives2.csv)
 
+Bar plot of EPL 2024 [outputs/epl24_bar_plot.jpg](outputs/epl24_bar_plot.jpg)
+
+Line plot of EPL Index 2018-2024 [outputs/epli_line_plot.jpg](outputs/epli_line_plot.jpg)
+
 #### Additional protected areas metrics
 
 Protected Areas maps for multiple time points between 1990 and 2024 were extracted from the PA time series data, these were cross tabulated withthe closest matching land cover time point (1990/2014/2018/2020/2022) and the naitonal vegetation map. The details of the workflow can be found in the Quarto document [Terr_protection_timeseries.qmd](Terr_protection_timeseries.qmd).
