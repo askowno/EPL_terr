@@ -38,7 +38,7 @@ Line plot of EPL Index 2018-2024 [outputs/epli_line_plot.jpg](outputs/epli_line_
 
 #### Additional protected areas metrics
 
-Protected Areas maps for multiple time points between 1990 and 2024 were extracted from the PA time series data, these were cross tabulated withthe closest matching land cover time point (1990/2014/2018/2020/2022) and the naitonal vegetation map. The details of the workflow can be found in the Quarto document [Terr_protection_timeseries.qmd](Terr_protection_timeseries.qmd).
+Protected Areas maps for multiple time points between 1990 and 2024 were extracted from the PA time series data, these were cross tabulated withthe closest matching land cover time point (1990/2014/2018/2020/2022) and the national vegetation map. The details of the workflow can be found in the Quarto document [Terr_protection_timeseries.qmd](Terr_protection_timeseries.qmd).
 
 National PA statistics can be extracted from the cross-tabulation results: [outputs/sa_pa_rall.csv](outputs/sa_pa_rall.csv)
 
@@ -47,3 +47,5 @@ PA extent per biome split into natural and non natural extent: [outputs/results_
 PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_pa_9023_biome.csv](outputs/results_df_pa_9023_biome.csv)
 
 Proportional PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_prp_pa_9023_biome.csv](outputs/results_df_prp_pa_9023_biome.csv)
+
+Bar plot of percentage of terrestrial protection per biome: [outputs/prop_biome_pa_year_plot4.jpeg](outputs/prop_biome_pa_year_plot4.jpeg)
