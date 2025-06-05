@@ -115,22 +115,22 @@ Cross-tabulate the raster stack and add a column denoting the YEAR to the output
 
 # Step 3. Crosstabulate vegetation, land cover and PA. Align the land cover time point with the PA time point as far as possible 
  
-tb1990 <- as_tibble(crosstab(c(lc1990,vegrast_masked,pr1990), useNA=TRUE))
-tb1990 <- tb1990 %>% add_column(YEAR =1990) %>% rename(LC = nlc1990_7class) 
+#tb1990 <- as_tibble(crosstab(c(lc1990,vegrast_masked,pr1990), useNA=TRUE))
+#tb1990 <- tb1990 %>% add_column(YEAR =1990) %>% rename(LC = nlc1990_7class) 
 tb2000 <- as_tibble(crosstab(c(lc1990,vegrast_masked,pr2000),useNA=TRUE))
 tb2000 <- tb2000 %>% add_column(YEAR =2000) %>% rename(LC = nlc1990_7class) 
 tb2010 <- as_tibble(crosstab(c(lc2014,vegrast_masked,pr2010),useNA=TRUE))
 tb2010 <- tb2010 %>% add_column(YEAR =2010) %>% rename(LC = nlc2014_7class) 
-tb2015 <- as_tibble(crosstab(c(lc2014,vegrast_masked,pr2015),useNA=TRUE))
-tb2015 <- tb2015 %>% add_column(YEAR =2015) %>% rename(LC = nlc2014_7class) 
+#tb2015 <- as_tibble(crosstab(c(lc2014,vegrast_masked,pr2015),useNA=TRUE))
+#tb2015 <- tb2015 %>% add_column(YEAR =2015) %>% rename(LC = nlc2014_7class) 
 tb2018 <- as_tibble(crosstab(c(lc2018,vegrast_masked,pr2018),useNA=TRUE))
 tb2018 <- tb2018 %>% add_column(YEAR =2018)  %>% rename(LC = nlc2018_7class) 
-tb2020 <- as_tibble(crosstab(c(lc2020,vegrast_masked,pr2020),useNA=TRUE))
-tb2020 <- tb2020 %>% add_column(YEAR =2020) %>% rename(LC = nlc2020_7class) 
-tb2022 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2022),useNA=TRUE))
-tb2022 <- tb2022 %>% add_column(YEAR =2022) %>% rename(LC = nlc2022_7class) 
-tb2023 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2023),useNA=TRUE))
-tb2023 <- tb2023 %>% add_column(YEAR =2023) %>% rename(LC = nlc2022_7class) 
+#tb2020 <- as_tibble(crosstab(c(lc2020,vegrast_masked,pr2020),useNA=TRUE))
+#tb2020 <- tb2020 %>% add_column(YEAR =2020) %>% rename(LC = nlc2020_7class) 
+#tb2022 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2022),useNA=TRUE))
+#tb2022 <- tb2022 %>% add_column(YEAR =2022) %>% rename(LC = nlc2022_7class) 
+#tb2023 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2023),useNA=TRUE))
+#tb2023 <- tb2023 %>% add_column(YEAR =2023) %>% rename(LC = nlc2022_7class) 
 tb2024 <- as_tibble(crosstab(c(lc2022,vegrast_masked,pr2024),useNA=TRUE))
 tb2024 <- tb2024 %>% add_column(YEAR =2024) %>% rename(LC = nlc2022_7class)
 ```
@@ -141,7 +141,7 @@ Step 5. Combine the output tables and convert pixel counts to extent in km2 . Pi
 
 # Step 5. 
 
-rlist = list(tb1990,tb2000, tb2010, tb2015, tb2018, tb2020, tb2022, tb2023, tb2024) 
+rlist = list(tb2000, tb2010, tb2018, tb2024) 
 sa_pa_rall <- rlist %>%  bind_rows()%>%   
   as_tibble() %>% 
   filter(n != 0, !is.na(LC), LC != "NaN", LC != 0,!is.na(T_MAPCODE)) %>% # T_MAPCODE NAs are outside of SA,  LC NA is outside of SA territory, LC = 0 is marine, n = 0 is combos not ecounteredd. NB -  KEEP the TRUE  NAs for T_MAPCODE which are EST and FW see earlier step to adjust veg input layer to ensure these can be seperated from T_MAPCODE NAs from masking process.
@@ -203,7 +203,7 @@ Summarize the results for further analysis and as a basis for graphics (long dat
 
 ```{r}
 #import spatial analysis output
-sa_pa_rall <- read_csv("outputs/sa_pa_rall.csv", show_col_types = FALSE) # import test data for now but once the spatial aspects is run then use full version 
+#sa_pa_rall <- read_csv("outputs/sa_pa_rall.csv", show_col_types = FALSE) # import test data for now but once the spatial aspects is run then use full version 
 
 biome_order <- c("Albany Thicket", "Azonal", "Desert", "Forest", "Fynbos", "Grassland", "IOCB", "Nama-Karoo", "Savanna", "Succulent Karoo", "NOTVEG")
 sa_pa_rall$BIOME <- factor(sa_pa_rall$BIOME, levels = biome_order) # this helps set the order
@@ -215,7 +215,7 @@ pa_sum_biome <- sa_pa_rall %>%
   summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
   pivot_wider(names_from = YEAR, values_from = tot_km2, values_fill = 0) %>%
    bind_rows(
-      summarise(.,across(`1990`:`2024`, \(x) sum(x , na.rm = TRUE)) %>%
+      summarise(.,across(`2000`:`2024`, \(x) sum(x , na.rm = TRUE)) %>%
             mutate(BIOME = "TOTAL")) ) # Adjust this column if needed
 
 write.csv(pa_sum_biome, file = "outputs/results_df_pa_9024_biome.csv") #export results
@@ -263,7 +263,7 @@ Plots
 ```{r}
 ## 1) plot the overal PA TYPE over time  
 
-plot_data <- sa_pa_rall %>%
+plot_data1 <- sa_pa_rall %>%
   filter(!is.na(TYPE),TYPE != "NOTPA" & TYPE != "MPA") %>%
   group_by(TYPE, YEAR) %>%
   summarise(total_km2 = sum(km2), .groups = 'drop')
@@ -282,10 +282,10 @@ pa_colors <- c(
 )
 
 pa_order <- c("NP", "NR", "FWA", "FNR", "PE", "MCA", "WHS", "SNR")
-plot_data$TYPE <- factor(plot_data$TYPE, levels = pa_order)
+plot_data1$TYPE <- factor(plot_data1$TYPE, levels = pa_order)
 
 # Create the plot
-plot <- ggplot(plot_data, aes(x = as.factor(YEAR), y = total_km2, fill = TYPE)) +
+plot1 <- ggplot(plot_data1, aes(x = as.factor(YEAR), y = total_km2, fill = TYPE)) +
   geom_bar(stat = "identity") +  # Stacked bar chart 
   scale_fill_manual(values = pa_colors) + 
   theme_minimal() +
@@ -302,8 +302,8 @@ plot <- ggplot(plot_data, aes(x = as.factor(YEAR), y = total_km2, fill = TYPE)) 
 
 #export the graph
 ggsave(
-  filename = "outputs/pa_km2_year_plot.jpeg", # File name
-  plot = plot,                            # Plot object
+  filename = "outputs/pa_km2_year_plot1.jpeg", # File name
+  plot = plot1,                            # Plot object
   device = "jpeg",                        # File format
   width = 12, height = 8, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
@@ -354,7 +354,7 @@ plot2 <- ggplot(plot_data2, aes(x = as.factor(YEAR), y = total_km2, fill = BIOME
 
 #export the graph
 ggsave(
-  filename = "outputs/pa_km2_biome_plot.jpeg", # File name
+  filename = "outputs/pa_km2_biome_plot2.jpeg", # File name
   plot = plot2,                            # Plot object
   device = "jpeg",                        # File format
   width = 12, height = 8, units = "cm",   # Dimensions
@@ -368,9 +368,7 @@ ggsave(
 
 # Calculate proportions
 prop_data3 <- sa_pa_rall %>%
-  filter(TYPE != "NOTPA" & TYPE != "MPA" & 
-           YEAR != 2025, YEAR != 2015, YEAR != 2010 & 
-           YEAR != 2022) %>%
+  filter(TYPE != "NOTPA" & TYPE != "MPA") %>%
   group_by(TYPE, BIOME, YEAR) %>%
   summarise(total_km2 = sum(km2), .groups = 'drop') %>%
   group_by(BIOME, YEAR) %>%
@@ -413,8 +411,72 @@ plot3 <- ggplot(prop_data3, aes(x = as.factor(YEAR), y = proportion, fill = TYPE
 
 #export the graph
 ggsave(
-  filename = "outputs/pa_prop_biome_year_plot.jpeg", # File name
+  filename = "outputs/pa_prop_biome_year_plot3.jpeg", # File name
   plot = plot3,                            # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+```
+
+```{r}
+## 4) plot the PA over time per biome 
+#PROPORTIONAL version 
+
+# Calculate proportions
+# get SA full extent and pull from summary frame as value
+sa_ext <- sa_pa_rall %>%
+  filter(YEAR == 2024, TYPE != "MPA") %>%
+  #group_by(YEAR) %>%
+  summarise(tot_sa = sum(km2)) %>%
+  pull(tot_sa)
+# get pa extent as prp of sa ext 
+prop_data4 <- sa_pa_rall %>%
+  filter(TYPE != "NOTPA" & TYPE != "MPA") %>%
+  group_by(YEAR,BIOME) %>%
+  summarise(ext_pa = sum(km2), .groups = 'drop') %>%
+  mutate(prp_pa = ext_pa/sa_ext)
+# get overall percentage protected for each year 
+protected_totals <- sa_pa_rall %>%
+  filter(TYPE != "NOTPA" & TYPE != "MPA") %>%
+  group_by(YEAR) %>%
+  summarise(prp_pa_year = round(sum(km2)/sa_ext, 4), .groups = 'drop')
+
+# Create the plot
+plot4 <- ggplot(prop_data4, aes(x = as.factor(YEAR), y = prp_pa, fill = BIOME)) +
+  geom_bar(stat = "identity", position = "stack") +  # Stacked bar chart for proportions
+  scale_fill_manual(values = biome_colors) + 
+  # facet_wrap(~ BIOME, ncol = 5) +
+  theme_minimal() +
+  labs(
+    title = "Proportion of Biome Protected per Year",
+    x = "Year",
+    y = "Proportion PA",
+    fill = "Biome"
+  ) +
+  scale_y_continuous(labels = scales::percent) +  # Show y-axis as percentages
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text = element_text(size = 10),
+        legend.position = "bottom",
+        legend.text = element_text(size = 7)) +
+  # Add annotation
+  geom_text(
+    data = protected_totals,
+    aes(
+      x = as.factor(YEAR),
+      y = 0.11,  # Slightly above the top (stacked bars total 1.0)
+      label = scales::percent(prp_pa_year)
+    ),
+    inherit.aes = FALSE,
+    size = 2,
+    fontface = "bold"
+  )
+
+
+#export the graph
+ggsave(
+  filename = "outputs/prop_biome_pa_year_plot4.jpeg", # File name
+  plot = plot4,                            # Plot object
   device = "jpeg",                        # File format
   width = 16, height = 12, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
