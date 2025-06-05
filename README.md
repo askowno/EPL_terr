@@ -12,7 +12,13 @@ This Repository contains a workflow that results in the NBA 2025 Ecosystem Prote
 
 #### Ecosystem Protection Level Analysis
 
-Terrestrial Ecosystem Protection Level was calculated
+Terrestrial Ecosystem Protection Level was calculated by assessing the degree to which protected areas targets for each ecosystem were met. By cross tabulating land cover, terrestrial ecosystem maps (vegetation map), protected areas maps for 2018 and 2024 we calculated for each ecosystem type (465 types of terrestrial ecosystems described for South Africa): i) the full extent of the type (F), ii) the full extent of the type within the PA network (P), iii) natural remaining the extent of the type within the PA network (N), iv) the extent of invasion by alien plants within the PA network for each type (I).
+
+The target for each type was expressed as km2: Ecosystem type target % x F = T) *[note if no ecosystem specific targets are available then use 30% to align with GBF target]*
+
+For each type:
+
+The invaded extent (I) within the PA network is reduced by 70% and added to the natural extent within the PA network (N) and is then divided by the target (T) to
 
 ``` mermaid
 flowchart LR;   
