@@ -12,13 +12,31 @@ This Repository contains a workflow that results in the NBA 2025 Ecosystem Prote
 
 #### Ecosystem Protection Level Analysis
 
-Terrestrial Ecosystem Protection Level was calculated by assessing the degree to which protected areas targets for each ecosystem were met. By cross tabulating land cover, terrestrial ecosystem maps (vegetation map), protected areas maps for 2018 and 2024 we calculated for each ecosystem type (465 types of terrestrial ecosystems described for South Africa): i) the full extent of the type (F), ii) the full extent of the type within the PA network (P), iii) natural remaining the extent of the type within the PA network (N), iv) the extent of invasion by alien plants within the PA network for each type (I).
+Terrestrial Ecosystem Protection Level was calculated by assessing the degree to which protected areas targets for each ecosystem were met. By cross tabulating land cover, terrestrial ecosystem maps (vegetation map), protected areas maps for 2018 and 2024 we calculated for each ecosystem type (465 types of terrestrial ecosystems described for South Africa): i) the full extent of the type (**a**), ii) the full extent of the type within the PA network (b), iii) natural remaining the extent of the type within the PA network (including invaded areas) (**c**), iv) the extent of invasion by alien plants within the PA network for each type (**d**). The target for each type was expressed as km2:
 
-The target for each type was expressed as km2: Ecosystem type target % x F = T) *[note if no ecosystem specific targets are available then use 30% to align with GBF target]*
+***ecosystem type target % X a = e*** *[note if no ecosystem specific targets are available then use 30% to align with GBF target]*
 
 For each type:
 
-The invaded extent (I) within the PA network is reduced by 70% and added to the natural extent within the PA network (N) and is then divided by the target (T) to
+The natural remaining extent within the PA network (c) was then **adjusted downwards** (**f**) by subtracting 70% of the invaded extent (**d**) within the PA network. This step ensures that effectiveness of PA network is accounted for to a degree by preventing areas heavily degraded by invasive alien plants from fully contributing to ecosystem representation targets.
+
+***c X 0.7 X d = f***
+
+EPL classes:
+
+-   Well Protected (WP); target met or exceeded; ***f \>= e***
+
+-   Moderately Protected (MP); 50-99% of target met; ***f\>=0.5\*e***
+
+-   Poorly Protected (PP); 5-49% of target met; ***f\>=0.05\*e***
+
+-   Not Protected (NP); less than 5% of target met; ***f\<0.05\*e***
+
+**Calculate EPL Index**
+
+EPL Index calculation (Harris et al., in review) (based on Red List Index for Threatened Species)
+
+***(sum of WP X 3 + sum of MP X 2 + sum of PP X 1 + sum NP X 0 ) / sum all types X 3 = EPLI***
 
 ``` mermaid
 flowchart LR;   

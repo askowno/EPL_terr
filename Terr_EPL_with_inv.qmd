@@ -14,7 +14,7 @@ execute:
 
 ### Approach
 
-Terrestrial Ecosystem Protection Level assessment with the inclusion of additional steps to utilise combined invasive alien plant data. This assessment is for 2018 & 2024 and reveals the degree to which Protected Area targets have been met for each terrestrial ecosystem type (ecosystem representaiton). The analysis includes steps to address the effectiveness of PAs by down weighting the contribution to targets for areas which are heavily invaded by alien plants. .
+Terrestrial Ecosystem Protection Level assessment with the inclusion of additional steps to utilise combined invasive alien plant data. This assessment is for 2018 & 2024 and reveals the degree to which Protected Area targets have been met for each terrestrial ecosystem type (ecosystem representation). The analysis includes steps to address the effectiveness of PAs by down weighting the contribution to targets for areas which are heavily invaded by alien plants. .
 
 ```{r}
 
@@ -105,25 +105,27 @@ write.csv(tb2024, file = "outputs/pa2024_inv2.csv")
 
 ```
 
-*Prepare analysis tables*
+#### Ecosystem Protection Level Analysis
 
-Calculate the required per ecosystem type metrics: total extent, extent within PA, extent that is in natural state within PA, and the extent of the natural area in the PA that is heavily invaded with invasive alien plants. The heavily invaded areas are typically \>50% canopy cover of IAP and are considered severely modified (\>70% biotic disruption / modification). As such, the areas within the PA system that are invaded do not contribute fully to achieving the representivity targets (national and global). Their contribution is down-weighted by 70%.
+Terrestrial Ecosystem Protection Level was calculated by assessing the degree to which protected areas targets for each ecosystem were met. By cross tabulating land cover, terrestrial ecosystem maps (vegetation map), protected areas maps for 2018 and 2024 we calculated for each ecosystem type (465 types of terrestrial ecosystems described for South Africa): i) the full extent of the type (**a**), ii) the full extent of the type within the PA network (b), iii) natural remaining the extent of the type within the PA network (including invaded areas) (**c**), iv) the extent of invasion by alien plants within the PA network for each type (**d**). The target for each type was expressed as km2:
 
-*Natural extent within PA + (0.7 x invaded extent within PA) = Contribution to targets using in EPL calculations.*
+***ecosystem type target % X a = e*** *\[note if no ecosystem specific targets are available then use 30% to align with GBF target\]*
 
-**EPL classes:**
+For each type:
 
--   Well Protected (WP); target met or exceeded
+The natural remaining extent within the PA network (c) was then **adjusted downwards** (**f**) by subtracting 70% of the invaded extent (**d**) within the PA network. This step ensures that effectiveness of PA network is accounted for to a degree by preventing areas heavily degraded by invasive alien plants from fully contributing to ecosystem representation targets.
 
--   Moderately Protected (MP); 50-99% of target met
+***c X 0.7 X d = f***
 
--   Poorly Protected (PP); 5-49% of target met
+EPL classes:
 
--   Not Protected (NP); less than 5% of target met
+-   Well Protected (WP); target met or exceeded; ***f \>= e***
 
-*National targets are ecosystem specific and range from 15-31%*
+-   Moderately Protected (MP); 50-99% of target met; ***f\>=0.5\*e***
 
-*GBF target is 30%*
+-   Poorly Protected (PP); 5-49% of target met; ***f\>=0.05\*e***
+
+-   Not Protected (NP); less than 5% of target met; ***f\<0.05\*e***
 
 #### Calculate EPL 2024
 
@@ -187,7 +189,7 @@ tb_veg <- tb2024 %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_veg = sum(km2),.groups = 'drop')
 
-# table of ecosystem extent in PA - per type  
+# table of full ecosystem extent in PA - per type  
 tb_vegpa24 <- tb2024 %>%
  filter(TYPE != "NOTPA",T_MAPCODE != "NOTVEG") %>%
   group_by(T_MAPCODE) %>%
