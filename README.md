@@ -56,9 +56,9 @@ The overall results can be found here: [outputs/results_df_EPL_2024_invasives2.c
 
 Biome level summary results can be found here: [outputs/results_df_EPL_2024_biome_invasives2.csv](outputs/results_df_EPL_2024_biome_invasives2.csv) & [outputs/results_df_EPL_2018_biome_invasives2.csv](outputs/results_df_EPL_2018_biome_invasives2.csv)
 
-Bar plot of EPL 2024 [outputs/epl24_bar_plot.jpg](outputs/epl24_bar_plot.jpg)
+Bar plot of EPL 2024 [outputs/epl24_bar_plot.jpeg](outputs/epl24_bar_plot.jpeg)
 
-Line plot of EPL Index 2018-2024 [outputs/epli_line_plot.jpg](outputs/epli_line_plot.jpg)
+Line plot of EPL Index 2018-2024 [outputs/epli_line_plot.jpeg](outputs/epli_line_plot.jpeg)
 
 #### Additional protected areas metrics
 
