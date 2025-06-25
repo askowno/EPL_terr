@@ -485,7 +485,7 @@ ggsave(
   filename = "outputs/epl24_bar_plot.jpeg", # File name
   plot = epl24_bar_plot,                   # Plot object
   device = "jpeg",                        # File format
-  width = 10, height = 8, units = "cm",   # Dimensions
+  width = 12, height = 8, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
@@ -534,7 +534,7 @@ ggsave(
   filename = "outputs/epli_line_plot.jpeg", # File name
   plot = epli_line_plot,                   # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 12, height = 8, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 ```
