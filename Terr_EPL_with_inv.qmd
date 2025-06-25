@@ -347,6 +347,7 @@ EPL Index calculation (Harris et al in prep)
 
 #summarise EPL 2024 per biome with adjustments for invasives 
 epl2024inv_sum <- epl2024 %>%
+   filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
   group_by(T_BIOME,epl_nat_inv24) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat_inv24, 
@@ -360,13 +361,19 @@ epl2024inv_sum <- epl2024 %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
   # Add EPLindex
-  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) %>%
+   mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , 
+                                               "Indian Ocean Coastal Belt", "Grassland", "Fynbos", 
+                                               "Forests","Desert", "Azonal Vegetation", "Albany Thicket" 
+                                               ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
 
 write.csv(epl2024inv_sum, file = "outputs/results_df_EPL_2024_biome_invasives2.csv") #export results 
 
 #summarise EPL 2024 per biome without using any adjustments for invasives (similar to NBA 2018)
 epl2024nat_sum <- epl2024 %>%
-    group_by(T_BIOME,epl_nat24) %>%
+   filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
+  group_by(T_BIOME,epl_nat24) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat24, 
               values_from = count, values_fill = 0) %>%
@@ -379,7 +386,12 @@ epl2024nat_sum <- epl2024 %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
   # Add EPLindex
-  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) %>%
+   mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , 
+                                               "Indian Ocean Coastal Belt", "Grassland", "Fynbos", 
+                                               "Forests","Desert", "Azonal Vegetation", "Albany Thicket" 
+                                               ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
 
 write.csv(epl2024nat_sum, file = "outputs/results_df_EPL_2024_biome2_natural.csv") #export results 
 
@@ -391,7 +403,8 @@ write.csv(epl2024nat_sum, file = "outputs/results_df_EPL_2024_biome2_natural.csv
 
 #summarise EPL2018 per biome with adjustments for invasives 
 epl2018inv_sum <- epl2018 %>%
-    group_by(T_BIOME,epl_nat_inv18) %>%
+   filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
+  group_by(T_BIOME,epl_nat_inv18) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat_inv18, 
               values_from = count, values_fill = 0) %>%
@@ -404,13 +417,19 @@ epl2018inv_sum <- epl2018 %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
   # Add EPLindex
-  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) %>%
+   mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , 
+                                               "Indian Ocean Coastal Belt", "Grassland", "Fynbos", 
+                                               "Forests","Desert", "Azonal Vegetation", "Albany Thicket"
+                                               ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
 
 write.csv(epl2018inv_sum, file = "outputs/results_df_EPL_2018_biome_invasives2.csv") #export results 
 
 #summarise EPL per biome without using any adjustments for invasives (similar to NBA 2018)
 epl2018nat_sum <- epl2018 %>%
-    group_by(T_BIOME,epl_nat18) %>%
+   filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
+   group_by(T_BIOME,epl_nat18) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat18, 
               values_from = count, values_fill = 0) %>%
@@ -423,7 +442,12 @@ epl2018nat_sum <- epl2018 %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
   # Add EPLindex
-  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) 
+  mutate(EPLI = ((WP*3)+(MP*2)+(PP*1)+(NP*0))/((WP+MP+PP+NP)*3)) %>%
+   mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" ,
+                                               "Indian Ocean Coastal Belt", "Grassland", "Fynbos", 
+                                               "Forests","Desert", "Azonal Vegetation", "Albany Thicket"
+                                               ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
 
 write.csv(epl2018nat_sum, file = "outputs/results_df_EPL_2018_biome2_natural.csv") #export results 
 ```
@@ -461,7 +485,7 @@ ggsave(
   filename = "outputs/epl24_bar_plot.jpeg", # File name
   plot = epl24_bar_plot,                   # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 10, height = 8, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
