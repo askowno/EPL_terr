@@ -346,6 +346,7 @@ EPL Index calculation (Harris et al in prep)
 ```{r}
 
 #summarise EPL 2024 per biome with adjustments for invasives 
+#COUNT of TYPES 2024
 epl2024inv_sum <- epl2024 %>%
    filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
   group_by(T_BIOME,epl_nat_inv24) %>%
@@ -369,6 +370,30 @@ epl2024inv_sum <- epl2024 %>%
    arrange(T_BIOME)
 
 write.csv(epl2024inv_sum, file = "outputs/results_df_EPL_2024_biome_invasives2.csv") #export results 
+
+# EXTENT of TYPES 2024
+epl2024inv_ext <- epl2024 %>%
+   filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
+  group_by(T_BIOME,epl_nat_inv24) %>%
+  summarise(ext_veg_tot = round(sum(ext_veg),2),.groups = 'drop') %>%
+  pivot_wider(names_from = epl_nat_inv24, 
+              values_from = ext_veg_tot, values_fill = 0) %>%
+  relocate(WP, .before = MP)%>%
+  relocate(NP, .after = PP) %>%
+  # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+   mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , 
+                                               "Indian Ocean Coastal Belt", "Grassland", "Fynbos", 
+                                               "Forests","Desert", "Azonal Vegetation", "Albany Thicket" 
+                                               ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
+
+write.csv(epl2024inv_ext, file = "outputs/results_df_EPL_2024_biome_invasives2_ext.csv") #export results 
+
 
 #summarise EPL 2024 per biome without using any adjustments for invasives (similar to NBA 2018)
 epl2024nat_sum <- epl2024 %>%
@@ -462,7 +487,7 @@ write.csv(epl2018nat_sum, file = "outputs/results_df_EPL_2018_biome2_natural.csv
 # load nbaR package : first run this in console devtools::install_github("SANBI-NBA/nbaR") 
 library(nbaR)
 
-# Use NBA package to make EPL graph (need high res output for booklet)
+# Use NBA package to make EPL graph of COUNT per category 
 EPL <- epl2024inv_sum %>%
     rename(`Well Protected` = WP, 
            `Moderately Protected` = MP, 
@@ -485,9 +510,37 @@ ggsave(
   filename = "outputs/epl24_bar_plot.jpeg", # File name
   plot = epl24_bar_plot,                   # Plot object
   device = "jpeg",                        # File format
-  width = 12, height = 8, units = "cm",   # Dimensions
+  width = 16, height = 12, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
+
+# Use NBA package to make EPL graph of EXTENT  per category 
+EPLext <- epl2024inv_ext %>%
+    rename(`Well Protected` = WP, 
+           `Moderately Protected` = MP, 
+           `Poorly Protected` = PP, 
+           `Not Protected` = NP ) # %>%
+  # select(-...1) # required if importing from CSV
+ 
+epl24_bar_plot_ext <- nba_plot(EPLext,
+                  `T_BIOME`,
+                  2:5,
+                 CHRT = "bar",
+                 NUM = FALSE,
+                 LAB = "Percentage ecosystem extent",
+                SAVE = NULL)
+
+epl24_bar_plot_ext
+
+#export the graph
+ggsave(
+  filename = "outputs/epl24_bar_plot_ext.jpeg", # File name
+  plot = epl24_bar_plot_ext,                   # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+
 
 #make a line plot of EPL Index using 2018 and 2014 timepoints - request Natasha to impve this or add to package.
 
