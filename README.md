@@ -18,13 +18,13 @@ Terrestrial Ecosystem Protection Level was calculated by assessing the degree to
 
 -   ***e = ecosystem type target % X a*** *[note if no ecosystem specific targets are available then use 30% to align with GBF target]*
 
-[The extent of of each type within the PA network was adjusted for habitat loss and invasion:]{.underline}
+The extent of of each type within the PA network was adjusted for habitat loss and invasion:
 
 The natural remaining extent within the PA network (c) was **adjusted downwards** (**f**) by subtracting 70% of the invaded extent (**d**) within the PA network. This step ensures that effectiveness of PA network is accounted for to a degree by preventing areas heavily degraded by invasive alien plants from fully contributing to ecosystem representation targets.
 
 -   ***f = c - ( 0.7 X d )*** [note for this analysis the invasives data are estimated to represent \>= 70% severity of biotic disruption]
 
-[Ecosystem Protecection Level Classes:]{.underline}
+[Ecosystem Protection Level Classes:]{.underline}
 
 -   Well Protected (WP); target met or exceeded; ***f \>= e***
 
@@ -38,7 +38,7 @@ The natural remaining extent within the PA network (c) was **adjusted downwards*
 
 EPL Index calculation (Harris et al., in review) (based on Red List Index for Threatened Species)
 
-***(sum of WP X 3 + sum of MP X 2 + sum of PP X 1 + sum NP X 0 ) / sum all types X 3 = EPLI***
+-   ***EPLI = (count of WP X 3 + count of MP X 2 + count of PP X 1 + count NP X 0 ) / count all types X 3***
 
 ``` mermaid
 flowchart LR;   
