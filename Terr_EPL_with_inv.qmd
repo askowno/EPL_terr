@@ -387,9 +387,9 @@ write.csv(epl2024inv_sum, file = "outputs/results_df_EPL_2024_biome_invasives2.c
 epl2024inv_ext <- epl2024 %>%
    filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
   group_by(T_BIOME,epl_nat_inv24) %>%
-  summarise(ext_veg_tot = round(sum(ext_veg),2),.groups = 'drop') %>%
+  summarise(ext_vegrem_tot = round(sum(ext_vegrem),2),.groups = 'drop') %>%
   pivot_wider(names_from = epl_nat_inv24, 
-              values_from = ext_veg_tot, values_fill = 0) %>%
+              values_from = ext_vegrem_tot, values_fill = 0) %>%
   relocate(WP, .before = MP)%>%
   relocate(NP, .after = PP) %>%
   # Add row-wise TOTAL
@@ -462,6 +462,31 @@ epl2018inv_sum <- epl2018 %>%
    arrange(T_BIOME)
 
 write.csv(epl2018inv_sum, file = "outputs/results_df_EPL_2018_biome_invasives2.csv") #export results 
+
+# EXTENT of TYPES 2018
+epl2018inv_ext <- epl2018 %>%
+   filter(!T_MAPCODE %in% c("FOa2", "FOa3")) %>%
+  group_by(T_BIOME,epl_nat_inv18) %>%
+  summarise(ext_vegrem_tot = round(sum(ext_vegrem),2),.groups = 'drop') %>%
+  pivot_wider(names_from = epl_nat_inv18, 
+              values_from = ext_vegrem_tot, values_fill = 0) %>%
+  relocate(WP, .before = MP)%>%
+  relocate(NP, .after = PP) %>%
+  # Add row-wise TOTAL
+  rowwise() %>%
+  mutate(Total = sum(c_across(where(is.numeric)))) %>%
+  ungroup() %>%
+  # Add TOTAL row (column-wise sums)
+  bind_rows(summarise(., T_BIOME = "Total", across(where(is.numeric), sum))) %>%
+   mutate(T_BIOME = factor(T_BIOME, levels = c("Total", "Succulent Karoo", "Savanna", "Nama-Karoo" , 
+                                               "Indian Ocean Coastal Belt", "Grassland", "Fynbos", 
+                                               "Forests","Desert", "Azonal Vegetation", "Albany Thicket" 
+                                               ))) %>% ## ggplot plots inverted factors!
+   arrange(T_BIOME)
+
+write.csv(epl2018inv_ext, file = "outputs/results_df_EPL_2018_biome_invasives2_ext.csv") #export results 
+
+
 
 #summarise EPL per biome without using any adjustments for invasives (similar to NBA 2018)
 epl2018nat_sum <- epl2018 %>%
