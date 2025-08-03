@@ -189,6 +189,11 @@ tb_veg <- tb2024 %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_veg = sum(km2),.groups = 'drop')
 
+tb_vegrem <- tb2024 %>%
+  filter(T_MAPCODE != "NOTVEG", LC_text != "Notnat") %>%
+  group_by(T_MAPCODE) %>%
+  summarise(ext_vegrem = sum(km2),.groups = 'drop')
+
 # table of full ecosystem extent in PA - per type  
 tb_vegpa24 <- tb2024 %>%
  filter(TYPE != "NOTPA",T_MAPCODE != "NOTVEG") %>%
@@ -211,6 +216,7 @@ tb_invpa24 <- tb2024 %>%
 # join  the tables and calculate EPL
 epl2024 <- tb_tar %>%
   left_join(tb_veg, by = "T_MAPCODE") %>%
+  left_join(tb_vegrem, by = "T_MAPCODE") %>%
   left_join(tb_vegpa24, by = "T_MAPCODE") %>%
   left_join(tb_vegrempa24, by = "T_MAPCODE") %>%
   left_join(tb_invpa24, by = "T_MAPCODE") %>%
@@ -289,6 +295,11 @@ tb_vegpa18 <- tb2018 %>%
   group_by(T_MAPCODE) %>%
   summarise(ext_vegpa18 = sum(km2),.groups = 'drop') 
 
+tb_vegrem18 <- tb2018 %>%
+  filter(T_MAPCODE != "NOTVEG", LC_text != "Notnat") %>%
+  group_by(T_MAPCODE) %>%
+  summarise(ext_vegrem = sum(km2),.groups = 'drop')
+
 # table of nat remnant extent in pa - per type ( inv counted as nat)  
 tb_vegrempa18 <- tb2018 %>%
  filter(TYPE != "NOTPA", T_MAPCODE != "NOTVEG", LC_text != "Notnat") %>%
@@ -305,6 +316,7 @@ tb_invpa18 <- tb2018 %>%
 # join up the tables and calculate EPL
 epl2018 <- tb_tar %>%
   left_join(tb_veg, by = "T_MAPCODE") %>%
+  left_join(tb_vegrem, by = "T_MAPCODE") %>%
   left_join(tb_vegpa18, by = "T_MAPCODE") %>%
   left_join(tb_vegrempa18, by = "T_MAPCODE") %>%
   left_join(tb_invpa18, by = "T_MAPCODE") %>%
@@ -501,16 +513,16 @@ epl24_bar_plot <- nba_plot(EPL,
                  CHRT = "bar",
                  NUM = TRUE,
                  LAB = "Percentage of ecosystem types",
-                SAVE = NULL)
-
+                 SAVE = NULL,
+                 SCALE_TEXT = 0.6)
 epl24_bar_plot
 
 #export the graph
 ggsave(
-  filename = "outputs/epl24_bar_plot.jpeg", # File name
+  filename = "outputs/testsave.jpeg", # File name
   plot = epl24_bar_plot,                   # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 8, height = 6, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
