@@ -497,6 +497,7 @@ write.csv(epl2018nat_sum, file = "outputs/results_df_EPL_2018_biome2_natural.csv
 #data <- read_csv("C:/Rdata/EPL_terr/outputs/results_df_EPL_2018_biome_invasives2.csv")
 
 # load nbaR package : first run this in console devtools::install_github("SANBI-NBA/nbaR") 
+
 library(nbaR)
 
 # Use NBA package to make EPL graph of COUNT per category 
@@ -515,14 +516,21 @@ epl24_bar_plot <- nba_plot(EPL,
                  LAB = "Percentage of ecosystem types",
                  SAVE = NULL,
                  SCALE_TEXT = 0.6)
-epl24_bar_plot
+
+epl24_bar_plot <- epl24_bar_plot +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+# to tweak position of legend uselegend.margin to prevent it being cut off: 
+# make l more negative to shift left etc 
+# but it is also affected by SCALE_TEXT above
 
 #export the graph
 ggsave(
-  filename = "outputs/testsave.jpeg", # File name
+  filename = "outputs/epl24_barplot.jpeg", # File name
   plot = epl24_bar_plot,                   # Plot object
   device = "jpeg",                        # File format
-  width = 8, height = 6, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
@@ -540,16 +548,23 @@ epl24_bar_plot_ext <- nba_plot(EPLext,
                  CHRT = "bar",
                  NUM = FALSE,
                  LAB = "Percentage ecosystem extent",
-                SAVE = NULL)
+                SAVE = NULL,
+                SCALE_TEXT = 0.6)
 
-epl24_bar_plot_ext
+epl24_bar_plot_ext <- epl24_bar_plot_ext +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+# to tweak position of legend uselegend.margin to prevent it being cut off: 
+# make l more negative to shift left etc 
+# but it is also affected by SCALE_TEXT above
 
 #export the graph
 ggsave(
-  filename = "outputs/epl24_bar_plot_ext.jpeg", # File name
+  filename = "outputs/epl24_barplot_ext.jpeg", # File name
   plot = epl24_bar_plot_ext,                   # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
@@ -592,8 +607,7 @@ EPLI <- epl2024inv_sum %>%
   labs(x = "Year", y = "EPLI") +
   scale_x_discrete(limits = c("2018", "2024"))
   
-  epli_line_plot
-  
+ 
   #export the graph
 ggsave(
   filename = "outputs/epli_line_plot.jpeg", # File name
