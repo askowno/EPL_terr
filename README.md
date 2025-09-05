@@ -63,7 +63,7 @@ Bar plot of EPL 2024 [outputs/epl24_bar_plot.jpeg](outputs/epl24_bar_plot.jpeg)
 Line plot of EPL Index 2018-2024 [outputs/epli_line_plot.jpeg](outputs/epli_line_plot.jpeg)
 
 | EPL 2024 - Count of types per category | EPL 2024 - Extent remaining of types per category |
-|-------------------------------------------------|-------------------------------------------------|
+|----|----|
 | ![](outputs/epl24_barplot.jpeg) | ![](outputs/epl24_barplot_ext.jpeg) |
 
 #### Additional protected areas metrics
