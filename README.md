@@ -54,28 +54,36 @@ D --> M;
 
 Details of the workflow can be found in this quarto document [Terr_EPL_with_inv.qmd](Terr_EPL_with_inv.qmd)
 
-The overall results can be found here: [outputs/results_df_EPL_2024_invasives2.csv](outputs/results_df_EPL_2024_invasives2.csv) & [outputs/results_df_EPL_2018_invasives2.csv](outputs/results_df_EPL_2018_invasives2.csv)
+The overall results for EPL 2018 and 2024 can be found here:
 
-Biome level summary results can be found here: [outputs/results_df_EPL_2024_biome_invasives2.csv](outputs/results_df_EPL_2024_biome_invasives2.csv) & [outputs/results_df_EPL_2018_biome_invasives2.csv](outputs/results_df_EPL_2018_biome_invasives2.csv)
+[outputs/results_df_EPL_2024_invasives2.csv](outputs/results_df_EPL_2024_invasives2.csv) &
+
+[outputs/results_df_EPL_2018_invasives2.csv](outputs/results_df_EPL_2018_invasives2.csv)
+
+Biome level summary results can be found here:
+
+[outputs/results_df_EPL_2024_biome_invasives2.csv](outputs/results_df_EPL_2024_biome_invasives2.csv) &
+
+[outputs/results_df_EPL_2018_biome_invasives2.csv](outputs/results_df_EPL_2018_biome_invasives2.csv)
 
 Bar plot of EPL 2024 [outputs/epl24_bar_plot.jpeg](outputs/epl24_bar_plot.jpeg)
 
 Line plot of EPL Index 2018-2024 [outputs/epli_line_plot.jpeg](outputs/epli_line_plot.jpeg)
 
 | EPL 2024 - Count of types per category | EPL 2024 - Extent remaining of types per category |
-|----|----|
+|------------------------------------|------------------------------------|
 | ![](outputs/epl24_barplot.jpeg) | ![](outputs/epl24_barplot_ext.jpeg) |
 
 #### Additional protected areas metrics
 
-Protected Areas maps for multiple time points between 1990 and 2024 were extracted from the PA time series data, these were cross tabulated withthe closest matching land cover time point (1990/2014/2018/2020/2022) and the national vegetation map. The details of the workflow can be found in the Quarto document [Terr_protection_timeseries.qmd](Terr_protection_timeseries.qmd).
+Protected Areas maps for multiple time points between 1990 and 2024 were extracted from the PA time series data, these were cross tabulated with the closest matching land cover time point (1990/2014/2018/2020/2022) and the national vegetation map. The details of the workflow can be found in the Quarto document [Terr_protection_timeseries.qmd](Terr_protection_timeseries.qmd).
 
 National PA statistics can be extracted from the cross-tabulation results: [outputs/sa_pa_rall.csv](outputs/sa_pa_rall.csv)
 
-PA extent per biome split into natural and non natural extent: [outputs/results_df_pa2023_natnotnat_biome.csv](outputs/results_df_pa2023_natnotnat_biome.csv)
+PA extent per biome split into natural and non natural extent: [outputs/results_df_pa2024_natnotnat_biome.csv](outputs/results_df_pa2024_natnotnat_biome.csv)
 
-PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_pa_9023_biome.csv](outputs/results_df_pa_9023_biome.csv)
+PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_pa_9024_biome.csv](outputs/results_df_pa_9024_biome.csv)
 
-Proportional PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_prp_pa_9023_biome.csv](outputs/results_df_prp_pa_9023_biome.csv)
+Proportional PA extent over time per biome (including natural and non natural portions of PAs): [outputs/results_df_prp_pa_9024_biome.csv](outputs/results_df_prp_pa_9024_biome.csv)
 
 Bar plot of percentage of terrestrial protection per biome: [outputs/prop_biome_pa_year_plot4.jpeg](outputs/prop_biome_pa_year_plot4.jpeg)
